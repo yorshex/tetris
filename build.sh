@@ -10,4 +10,6 @@ SRC="${SRCDIR}/main.c"
 CFLAGS="-pedantic -Wall -Wextra -L${LIBDIR} -I${INCDIR}"
 LIBS='-l:libraylib.a -lm'
 
-${CC} ${CFLAGS} -o${BUILDDIR}/tetris ${SRC} ${LIBS}
+${CC} ${CFLAGS} -o${BUILDDIR}/tetris ${SRC} ${LIBS} &&
+    echo "\033[1;32mBuilding finished successfully\033[m" ||
+    echo "\033[1;31mBuilding finished abnormally\033[m"
