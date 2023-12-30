@@ -1,6 +1,3 @@
-#include <raylib.h>
-#include <stdint.h>
-
 #define TETRIS_PIECE_HEIGHT 4
 #define TETRIS_PIECE_WIDTH 4
 #define TETRIS_PIECE_AREA (TETRIS_PIECE_HEIGHT * TETRIS_PIECE_WIDTH)
@@ -20,6 +17,14 @@ typedef enum {
     TETRIS_PIECE_Z,
     TETRIS_PIECE_LAST,
 } TetrisPieceType;
+
+#define TETRIS_BAG_HALF_SIZE (TETRIS_PIECE_LAST - TETRIS_PIECE_FIRST)
+#define TETRIS_BAG_SIZE (TETRIS_BAG_HALF_SIZE * 2)
+
+typedef struct {
+    size_t index;
+    TetrisPieceType values[TETRIS_BAG_SIZE];
+} TetrisPieceBag;
 
 typedef enum {
     TETRIS_CELL_BLANK = TETRIS_PIECE_FIRST - 1,
@@ -45,6 +50,8 @@ typedef enum {
     TETRIS_COLOR_CELL_S = TETRIS_PIECE_S,
     TETRIS_COLOR_CELL_Z = TETRIS_PIECE_Z,
     TETRIS_COLOR_CELL_LAST = TETRIS_PIECE_LAST,
+    TETRIS_COLOR_JAR_BG = TETRIS_COLOR_CELL_LAST,
+    TETRIS_COLOR_LAST,
 } TetrisColorIndex;
 
 typedef enum {
@@ -61,12 +68,6 @@ typedef int8_t TetrisPieceWallKicks[2][WALL_KICK_TESTS_COUNT][TETRIS_POSSIBLE_RO
 typedef TetrisPieceWallKicks TetrisPieceWallKicksData[TETRIS_PIECE_POSSIBLE_ROTATIONS];
 
 typedef struct {
-    const TetrisPieceShapesData *shape;
-    const TetrisPieceWallKicksData *kicks;
-    TetrisColorIndex colorIndex;
-} TetrisPieceTypeData;
-
-typedef struct {
     TetrisCellType type;
 } TetrisCell;
 
@@ -78,21 +79,14 @@ typedef struct {
 } TetrisFallingPiece;
 
 typedef struct {
-    TetrisCell cells[TETRIS_JAR_AREA * 2];
-    TetrisFallingPiece fallingPiece;
-} TetrisJar;
+    int32_t frame; // current frame
+    int32_t frameLand; // the frame when the current piece landed on something
+    int32_t frameLock; // the frame when the current piece was locked
+    int32_t frameSpawn; // the frame when the current piece was spawned
+    int32_t frameFall; // last frame a piece was moved down by gravitation
+    int32_t frameMove; // last right/left key press frame
+    int32_t frameRepeat; // last auto-repeat frame
 
-typedef struct {
-    int32_t frame;
-    int32_t frameLand;
-    int32_t frameLock;
-    int32_t frameSpawn;
-    int32_t frameFall;
-    int32_t frameMove;
-    int32_t frameRepeat;
-} TetrisGameStats;
-
-typedef struct {
     int32_t delaySpawn; // spawn delay - jp. ARE
     int32_t delaySpawnClear; // ARE after filling a line
     int32_t delayLock; // lock delay
@@ -100,25 +94,33 @@ typedef struct {
     int32_t delayRepeatFirst; // delayed auto shift - DAS
     int32_t delayFall; // how much frames it takes for a piece to fall down for one cell
     int32_t factorSoftDrop; // soft drop factor - SDF
-} TetrisGameParams;
 
-typedef struct {
-    TetrisGameStats stats;
-    TetrisGameParams params;
-    TetrisJar jar;
+    bool fallPieceLanded;
+    TetrisPieceBag bag;
+    TetrisCell board[TETRIS_JAR_AREA * 2];
+    TetrisFallingPiece fallPiece;
 } TetrisGameState;
 
-static const Color tetris_colors[TETRIS_PIECE_LAST] = {
-    [TETRIS_PIECE_O] = YELLOW,
-    [TETRIS_PIECE_I] = SKYBLUE,
-    [TETRIS_PIECE_T] = PURPLE,
-    [TETRIS_PIECE_L] = ORANGE,
-    [TETRIS_PIECE_J] = BLUE,
-    [TETRIS_PIECE_S] = GREEN,
-    [TETRIS_PIECE_Z] = RED,
+#define TETRIS_PIECE_SHAPE_AT(shape, x, y) \
+    (shape)[x + TETRIS_PIECE_WIDTH * y]
+
+#define TETRIS_JAR_AT(game, x, y) \
+    ( ((x) > TETRIS_JAR_WIDTH || (x) < 0 || (y) >= TETRIS_JAR_HEIGHT || (y) < -TETRIS_JAR_HEIGHT) ? \
+      (TetrisCell){.type = TETRIS_CELL_OUT_OF_BOUNDS} : \
+      (game).board[x + TETRIS_JAR_WIDTH * (y + TETRIS_JAR_HEIGHT)] )
+
+const Color tetris_colors[TETRIS_COLOR_LAST] = {
+    [TETRIS_COLOR_CELL_O] = YELLOW,
+    [TETRIS_COLOR_CELL_I] = SKYBLUE,
+    [TETRIS_COLOR_CELL_T] = PURPLE,
+    [TETRIS_COLOR_CELL_L] = ORANGE,
+    [TETRIS_COLOR_CELL_J] = BLUE,
+    [TETRIS_COLOR_CELL_S] = GREEN,
+    [TETRIS_COLOR_CELL_Z] = RED,
+    [TETRIS_COLOR_JAR_BG] = LIGHTGRAY,
 };
 
-static const TetrisPieceWallKicksData tetris_piece_wall_kicks_datas[2] = {
+const TetrisPieceWallKicksData tetris_piece_wall_kicks_datas[2] = {
     { // regular
         { // 0
             { { 0, 0}, {-1, 0}, {-1,+1}, { 0,-2}, {-1,-2}, }, // CW, to 1
@@ -157,7 +159,7 @@ static const TetrisPieceWallKicksData tetris_piece_wall_kicks_datas[2] = {
     },
 };
 
-static const TetrisPieceShapesData tetris_piece_shapes_datas[TETRIS_PIECE_LAST] = {
+const TetrisPieceShapesData tetris_piece_shapes_datas[TETRIS_PIECE_LAST] = {
     [ TETRIS_PIECE_O ] = {
         {
             0, 0, 0, 0,
@@ -339,43 +341,5 @@ static const TetrisPieceShapesData tetris_piece_shapes_datas[TETRIS_PIECE_LAST] 
             1, 1, 0, 0,
             1, 0, 0, 0,
         },
-    },
-};
-
-static const TetrisPieceTypeData tetris_piece_type_datas[TETRIS_PIECE_LAST] = {
-    [ TETRIS_PIECE_O ] = {
-        &tetris_piece_shapes_datas[TETRIS_PIECE_O],
-        &tetris_piece_wall_kicks_datas[0],
-        TETRIS_COLOR_CELL_O,
-    },
-    [ TETRIS_PIECE_I ] = {
-        &tetris_piece_shapes_datas[TETRIS_PIECE_I],
-        &tetris_piece_wall_kicks_datas[1],
-        TETRIS_COLOR_CELL_I,
-    },
-    [ TETRIS_PIECE_T ] = {
-        &tetris_piece_shapes_datas[TETRIS_PIECE_T],
-        &tetris_piece_wall_kicks_datas[0],
-        TETRIS_COLOR_CELL_T,
-    },
-    [ TETRIS_PIECE_L ] = {
-        &tetris_piece_shapes_datas[TETRIS_PIECE_L],
-        &tetris_piece_wall_kicks_datas[0],
-        TETRIS_COLOR_CELL_L,
-    },
-    [ TETRIS_PIECE_J ] = {
-        &tetris_piece_shapes_datas[TETRIS_PIECE_J],
-        &tetris_piece_wall_kicks_datas[0],
-        TETRIS_COLOR_CELL_J,
-    },
-    [ TETRIS_PIECE_S ] = {
-        &tetris_piece_shapes_datas[TETRIS_PIECE_S],
-        &tetris_piece_wall_kicks_datas[0],
-        TETRIS_COLOR_CELL_S,
-    },
-    [ TETRIS_PIECE_Z ] = {
-        &tetris_piece_shapes_datas[TETRIS_PIECE_Z],
-        &tetris_piece_wall_kicks_datas[0],
-        TETRIS_COLOR_CELL_Z,
     },
 };
