@@ -11,7 +11,7 @@ void TetrisDrawGameJar(TetrisGameState *s, int posX, int posY, int width, int he
         tetris_colors[TETRIS_COLOR_JAR_BG]
     );
 
-#define piece (s->fallPiece)
+    #define piece (s->fallPiece)
     for (int y = 0; y < TETRIS_PIECE_HEIGHT; y++)
     {
         for (int x = 0; x < TETRIS_PIECE_WIDTH; x++)
@@ -28,7 +28,7 @@ void TetrisDrawGameJar(TetrisGameState *s, int posX, int posY, int width, int he
             );
         }
     }
-#undef piece
+    #undef piece
 
     for (int y = -TETRIS_JAR_HEIGHT; y < TETRIS_JAR_HEIGHT; y++)
     {

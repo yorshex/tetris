@@ -1,16 +1,16 @@
-TetrisGameState game;
+TetrisGameState game = {0};
 
 #define WIDTH 800
 #define HEIGHT 450
 
 int main(void)
 {
+    SetTraceLogLevel(LOG_DEBUG);
+
     InitWindow(WIDTH, HEIGHT, "TETЯIS");
     SetTargetFPS(60);
 
     TetrisGameStateInit(&game);
-
-    SetTraceLogLevel(LOG_DEBUG);
 
     while (!WindowShouldClose()) {
         BeginDrawing();

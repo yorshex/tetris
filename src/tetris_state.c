@@ -80,12 +80,14 @@ typedef struct {
 
 typedef struct {
     int32_t frame; // current frame
-    int32_t frameLand; // the frame when the current piece landed on something
-    int32_t frameLock; // the frame when the current piece was locked
-    int32_t frameSpawn; // the frame when the current piece was spawned
+    int32_t frameLand; // the frame the current piece landed on something
+    int32_t frameUnland; // the frame the current piece was moved on empty space after being landed
+    int32_t frameLock; // the frame the current piece was locked
+    int32_t frameSpawn; // the frame the current piece was spawned
     int32_t frameFall; // last frame a piece was moved down by gravitation
-    int32_t frameMove; // last right/left key press frame
+    int32_t frameMovement; // last frame
     int32_t frameRepeat; // last auto-repeat frame
+    int32_t safeMovementCount; // the amount
 
     int32_t delaySpawn; // spawn delay - jp. ARE
     int32_t delaySpawnClear; // ARE after filling a line
@@ -94,8 +96,10 @@ typedef struct {
     int32_t delayRepeatFirst; // delayed auto shift - DAS
     int32_t delayFall; // how much frames it takes for a piece to fall down for one cell
     int32_t factorSoftDrop; // soft drop factor - SDF
+    int32_t safeMovementThreshold; // the amount of movements the player can make without falling before being moved down or locked forcefully
 
     bool fallPieceLanded;
+    bool fallPieceLocked;
     TetrisPieceBag bag;
     TetrisCell board[TETRIS_JAR_AREA * 2];
     TetrisFallingPiece fallPiece;

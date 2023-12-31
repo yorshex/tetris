@@ -7,7 +7,7 @@
 [ -z ${BUILDDIR} ] && BUILDDIR=./build
 
 SRC="${SRCDIR}/tetris.c"
-CFLAGS="-pedantic -Wall -Wextra -L${LIBDIR} -I${INCDIR}"
+CFLAGS="-pedantic -Wall -Wextra -L${LIBDIR} -I${INCDIR} -g"
 LIBS='-l:libraylib.a -lm'
 
 ${CC} ${CFLAGS} -o${BUILDDIR}/tetris ${SRC} ${LIBS} &&
