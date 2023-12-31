@@ -7,6 +7,23 @@
 #define TETRIS_JAR_AREA (TETRIS_JAR_HEIGHT * TETRIS_JAR_WIDTH)
 
 typedef enum {
+    TETRIS_KEY_START,
+    TETRIS_KEY_MOVE_RIGHT,
+    TETRIS_KEY_MOVE_LEFT,
+    TETRIS_KEY_MOVE_ROTATE_CW,
+    TETRIS_KEY_MOVE_ROTATE_CCW,
+    TETRIS_KEY_HARD_DROP,
+    TETRIS_KEY_SOFT_DROP,
+    TETRIS_KEY_HOLD,
+    TETRIS_KEY_LAST,
+} TetrisKey;
+
+typedef struct {
+    bool down;
+    int32_t frameDown; // frame last press or unpress was made
+} TetrisKeyState;
+
+typedef enum {
     TETRIS_PIECE_FIRST = 0,
     TETRIS_PIECE_O = 0,
     TETRIS_PIECE_I,
@@ -60,11 +77,11 @@ typedef enum {
     TETRIS_POSSIBLE_ROTATION_DIRECTIONS,
 } TetrisRotationDirection;
 
-#define WALL_KICK_TESTS_COUNT 5
+#define TETRIS_WALL_KICK_TESTS_COUNT 5
 
 typedef int8_t TetrisPieceShape[TETRIS_PIECE_AREA];
 typedef TetrisPieceShape TetrisPieceShapesData[TETRIS_PIECE_POSSIBLE_ROTATIONS];
-typedef int8_t TetrisPieceWallKicks[2][WALL_KICK_TESTS_COUNT][TETRIS_POSSIBLE_ROTATION_DIRECTIONS];
+typedef int8_t TetrisPieceWallKicks[2][TETRIS_WALL_KICK_TESTS_COUNT][TETRIS_POSSIBLE_ROTATION_DIRECTIONS];
 typedef TetrisPieceWallKicks TetrisPieceWallKicksData[TETRIS_PIECE_POSSIBLE_ROTATIONS];
 
 typedef struct {
@@ -76,6 +93,8 @@ typedef struct {
     int32_t posX;
     int32_t posY;
     int32_t rotation;
+    bool landed;
+    bool locked;
 } TetrisFallingPiece;
 
 typedef struct {
@@ -85,9 +104,13 @@ typedef struct {
     int32_t frameLock; // the frame the current piece was locked
     int32_t frameSpawn; // the frame the current piece was spawned
     int32_t frameFall; // last frame a piece was moved down by gravitation
-    int32_t frameMovement; // last frame
-    int32_t frameRepeat; // last auto-repeat frame
-    int32_t safeMovementCount; // the amount
+    int32_t frameMovement; // last a movement (right,left,rotate) was frame
+    int32_t frameRepeat; // last frame an auto-repeat was mae
+    int32_t countSafeMove; // the amount
+    int32_t countSafeRotation; // the amount
+    TetrisKeyState keyRight;
+    TetrisKeyState keyLeft;
+    TetrisKeyState keySoftDrop;
 
     int32_t delaySpawn; // spawn delay - jp. ARE
     int32_t delaySpawnClear; // ARE after filling a line
@@ -96,10 +119,9 @@ typedef struct {
     int32_t delayRepeatFirst; // delayed auto shift - DAS
     int32_t delayFall; // how much frames it takes for a piece to fall down for one cell
     int32_t factorSoftDrop; // soft drop factor - SDF
-    int32_t safeMovementThreshold; // the amount of movements the player can make without falling before being moved down or locked forcefully
+    int32_t thresholdSafeMove; // the amount of movements the player can make without falling before being moved down or locked forcefully
+    int32_t thresholdSafeRotation; // the amount of movements the player can make without falling before being moved down or locked forcefully
 
-    bool fallPieceLanded;
-    bool fallPieceLocked;
     TetrisPieceBag bag;
     TetrisCell board[TETRIS_JAR_AREA * 2];
     TetrisFallingPiece fallPiece;
@@ -108,8 +130,11 @@ typedef struct {
 #define TETRIS_PIECE_SHAPE_AT(shape, x, y) \
     (shape)[x + TETRIS_PIECE_WIDTH * y]
 
+#define TETRIS_JAR_AT_UNSAFE(game, x, y) \
+    ((game).board[x + TETRIS_JAR_WIDTH * (y + TETRIS_JAR_HEIGHT)])
+
 #define TETRIS_JAR_AT(game, x, y) \
-    ( ((x) > TETRIS_JAR_WIDTH || (x) < 0 || (y) >= TETRIS_JAR_HEIGHT || (y) < -TETRIS_JAR_HEIGHT) ? \
+    ( ((x) >= TETRIS_JAR_WIDTH || (x) < 0 || (y) >= TETRIS_JAR_HEIGHT || (y) < -TETRIS_JAR_HEIGHT) ? \
       (TetrisCell){.type = TETRIS_CELL_OUT_OF_BOUNDS} : \
       (game).board[x + TETRIS_JAR_WIDTH * (y + TETRIS_JAR_HEIGHT)] )
 
@@ -125,6 +150,16 @@ const Color tetris_colors[TETRIS_COLOR_LAST] = {
 };
 
 const TetrisPieceWallKicksData tetris_piece_wall_kicks_datas[2] = {
+    /*
+0->R	( 0, 0)	(-1, 0)	(-1,+1)	( 0,-2)	(-1,-2)
+0->L	( 0, 0)	(+1, 0)	(+1,+1)	( 0,-2)	(+1,-2)
+R->2	( 0, 0)	(+1, 0)	(+1,-1)	( 0,+2)	(+1,+2)
+R->0	( 0, 0)	(+1, 0)	(+1,-1)	( 0,+2)	(+1,+2)
+2->L	( 0, 0)	(+1, 0)	(+1,+1)	( 0,-2)	(+1,-2)
+2->R	( 0, 0)	(-1, 0)	(-1,+1)	( 0,-2)	(-1,-2)
+L->0	( 0, 0)	(-1, 0)	(-1,-1)	( 0,+2)	(-1,+2)
+L->2	( 0, 0)	(-1, 0)	(-1,-1)	( 0,+2)	(-1,+2)
+     */
     { // regular
         { // 0
             { { 0, 0}, {-1, 0}, {-1,+1}, { 0,-2}, {-1,-2}, }, // CW, to 1

@@ -20,6 +20,8 @@ void TetrisShuffle(int *arr, size_t n) {
 void TetrisPrintVerboseInfo(TetrisGameState *s)
 {
 #define LOG_EXPR_INT(expr) TraceLog(LOG_DEBUG, #expr"\t%i", (expr))
+#define LOG_EXPR_BOOL(expr) TraceLog(LOG_DEBUG, #expr"\t%s", (expr) ? "true" : "false")
+#define LOG_EXPR_KEY(expr) TraceLog(LOG_DEBUG, #expr"\t%s, down at %i", (expr).down ? "down" : "up", (expr).frameDown)
     LOG_EXPR_INT(s->frame);
     LOG_EXPR_INT(s->frameLand);
     LOG_EXPR_INT(s->frameUnland);
@@ -27,8 +29,13 @@ void TetrisPrintVerboseInfo(TetrisGameState *s)
     LOG_EXPR_INT(s->frameSpawn);
     LOG_EXPR_INT(s->frameFall);
     LOG_EXPR_INT(s->frameMovement);
-    LOG_EXPR_INT(s->frameRepeat);
-    LOG_EXPR_INT(s->fallPieceLanded);
+    LOG_EXPR_INT(s->countSafeMove);
+    LOG_EXPR_INT(s->countSafeRotation);
+    LOG_EXPR_KEY(s->keyRight);
+    LOG_EXPR_KEY(s->keyLeft);
+    LOG_EXPR_KEY(s->keySoftDrop);
+    LOG_EXPR_BOOL(s->fallPiece.landed);
+    LOG_EXPR_BOOL(s->fallPiece.locked);
     LOG_EXPR_INT(s->bag.index);
     TraceLog(LOG_DEBUG, "s->bag\t%i %i %i %i %i %i %i\n"
                             "\t\t%i %i %i %i %i %i %i",
@@ -48,4 +55,5 @@ void TetrisPrintVerboseInfo(TetrisGameState *s)
             s->bag.values[13]
             );
 #undef LOG_EXPR_INT
+#undef LOG_EXPR_BOOL
 }
