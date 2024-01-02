@@ -11,7 +11,7 @@ TetrisPieceType TetrisBagNext(TetrisGameState *s) {
 }
 
 // check whether a cell is occupied
-extern inline bool TetrisCellOccupied(TetrisGameState *s, int posX, int posY) {
+extern inline bool TetrisCellOccupied(const TetrisGameState *s, int posX, int posY) {
     return TETRIS_JAR_AT(*s, posX, posY).type >= 0;
 }
 
@@ -41,7 +41,7 @@ void TetrisFallPieceInit(TetrisGameState *s, TetrisPieceType type, bool held) {
 }
 
 // get the shape of the falling piece
-extern inline TetrisPieceShape *TetrisFallPieceShape(TetrisGameState *s, int rotate) {
+extern inline TetrisPieceShape *TetrisFallPieceShape(const TetrisGameState *s, int rotate) {
     return (TetrisPieceShape *)
         &tetris_piece_shapes_datas
          [s->fallPiece.type]
@@ -103,7 +103,7 @@ void TetrisGameStateInit(TetrisGameState *s) {
 }
 
 // check if the falling piece overlaps with something if it's moved and/or rotated
-bool TetrisCheckCollisionDisplace(TetrisGameState *s, int displaceX, int displaceY, int rotate)
+bool TetrisCheckCollisionDisplace(const TetrisGameState *s, int displaceX, int displaceY, int rotate)
 {
     TetrisPieceShape *fallPieceShape = TetrisFallPieceShape(s, rotate);
 
@@ -172,7 +172,7 @@ bool TetrisRotateFallPieceSRS(TetrisGameState *s, TetrisRotationDirection r)
 
 #undef WALL_KICKS
 
-bool TetrisCheckToppedOut(TetrisGameState *s) {
+bool TetrisCheckToppedOut(const TetrisGameState *s) {
     for (int y = 0; y < 2; y++)
         for (int x = 0; x < 4; x++)
             if (TetrisCellOccupied(s, 3+x, -3+y))
@@ -200,11 +200,11 @@ void TetrisRemoveFullLines(TetrisGameState *s) {
 }
 
 void TetrisHardDropFallPiece(TetrisGameState *s) {
-    s->frameFall = s->frame;
-    while (!s->fallPiece.landed) {
+    while (!TetrisCheckCollisionDisplace(s, 0, 1, 0)) {
         s->fallPiece.posY += 1;
-        TetrisCheckLanded(s);
+        s->frameFall = s->frame;
     }
+    TetrisCheckLanded(s);
     TetrisFallPieceLock(s);
 }
 
@@ -296,10 +296,11 @@ void TetrisDoMidAir(TetrisGameState *s)
 {
     if (s->keySoftDrop.down && s->factorSoftDrop < 0) {
         s->frameFall = s->frame;
-        while (!s->fallPiece.landed) {
+        while (!TetrisCheckCollisionDisplace(s, 0, 1, 0)) {
             s->fallPiece.posY += 1;
-            TetrisCheckLanded(s);
         }
+        TetrisCheckLanded(s);
+        return;
     }
 
     s->g += s->gravity * (s->keySoftDrop.down ? s->factorSoftDrop : 1);
@@ -344,6 +345,8 @@ void TetrisFrame(TetrisGameState *s)
 
         if (succeededSpawnDelay) {
             s->frameSpawn = s->frame;
+            s->level += (1 + (s->countLinesFull > 2 ? s->countLinesFull + 2 : s->countLinesFull));
+            s->gravity = TETRIS_G/60 + (s->level*s->level)/100;
             TetrisRemoveFullLines(s);
             TetrisNextFallPiece(s);
             TetrisCheckLanded(s);

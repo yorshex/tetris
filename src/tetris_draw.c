@@ -20,6 +20,31 @@ void TetrisDrawPieceShape(TetrisPieceType type, int rotation, int posX, int posY
     }
 }
 
+void TetrisDrawPieceShapeLines(TetrisPieceType type, int rotation, int posX, int posY, int width, int height, int lineThick, Color color)
+{
+    float cellX = (float)width / TETRIS_PIECE_WIDTH;
+    float cellY = (float)height / TETRIS_PIECE_HEIGHT;
+
+    for (int y = 0; y < TETRIS_PIECE_HEIGHT; y++) {
+        for (int x = 0; x < TETRIS_PIECE_HEIGHT; x++)
+        {
+            if (TETRIS_PIECE_SHAPE_AT(tetris_piece_shapes_datas[type][repeat(rotation, TETRIS_PIECE_POSSIBLE_ROTATIONS)], x, y) == 0)
+                continue;
+
+            DrawRectangleLinesEx(
+                (Rectangle){
+                    posX + cellX * x,
+                    posY + cellY * y,
+                    ceilf(cellX),
+                    ceilf(cellY),
+                },
+                lineThick,
+                color
+            );
+        }
+    }
+}
+
 void TetrisDrawHoldPiece(TetrisGameState *s, int posX, int posY, int width, int height) {
     TetrisPieceType type = s->holdPieceType;
     Color color = ColorBrightness(tetris_colors[TETRIS_COLOR_CELL_FIRST + type], s->fallPiece.held ? -.5 : 0);
@@ -63,6 +88,24 @@ void TetrisDrawGameJar(const TetrisGameState *s, int posX, int posY, int width, 
     if (piece.locked) return;
 
     int lineThick = (int)roundf(fmin(cellX, cellY) * .2);
+    int lineThickShadow = (int)roundf(fmin(cellX, cellY) * .3);
+
+    int shadowPosY = 0;
+
+    while (!TetrisCheckCollisionDisplace(s, 0, 1+shadowPosY, 0))
+            shadowPosY += 1;
+
+    if (shadowPosY > 0)
+        TetrisDrawPieceShapeLines(
+            piece.type,
+            piece.rotation,
+            posX + cellX * (piece.posX),
+            posY + cellY * (piece.posY+shadowPosY),
+            cellX * 4,
+            cellY * 4,
+            lineThickShadow,
+            ColorAlpha(ColorBrightness(tetris_colors[TETRIS_COLOR_CELL_FIRST + piece.type], -0.75), 0.3)
+        );
 
     for (int y = 0; y < TETRIS_PIECE_HEIGHT; y++) {
         for (int x = 0; x < TETRIS_PIECE_WIDTH; x++) {
@@ -72,7 +115,7 @@ void TetrisDrawGameJar(const TetrisGameState *s, int posX, int posY, int width, 
             Color color =
                 ColorAlpha(
                     WHITE,
-                    (float)(10 - max(s->frame - s->frameMovement, 0)) / 10
+                    fmax((float)(10 - max(s->frame - s->frameMovement, 0)) / 10, 0.2)
                 );
 
             DrawRectangleLinesEx(
@@ -88,19 +131,14 @@ void TetrisDrawGameJar(const TetrisGameState *s, int posX, int posY, int width, 
         }
     }
 
-    for (int y = 0; y < TETRIS_PIECE_HEIGHT; y++) {
-        for (int x = 0; x < TETRIS_PIECE_WIDTH; x++) {
-            if (TETRIS_PIECE_SHAPE_AT(tetris_piece_shapes_datas[piece.type][piece.rotation], x, y) == 0)
-                continue;
-
-            DrawRectangle(
-                posX + cellX * (x + piece.posX),
-                posY + cellY * (y + piece.posY),
-                ceilf(cellX),
-                ceilf(cellY),
-                tetris_colors[TETRIS_COLOR_CELL_FIRST + piece.type]
-            );
-        }
-    }
+    TetrisDrawPieceShape(
+        piece.type,
+        piece.rotation,
+        posX + cellX * (piece.posX),
+        posY + cellY * (piece.posY),
+        cellX * 4,
+        cellY * 4,
+        tetris_colors[TETRIS_COLOR_CELL_FIRST + piece.type]
+    );
     #undef piece
 }

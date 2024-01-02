@@ -127,6 +127,8 @@ typedef struct {
     int32_t thresholdSafeMove; // the amount of moves the player can make without falling before being moved down or locked forcefully
     int32_t thresholdSafeRotation; // the amount of rotations the player can make without falling before being moved down or locked forcefully
 
+    int32_t level;
+
     int countLinesFull;
     bool maskLinesFull[TETRIS_JAR_HEIGHT * 2];
     TetrisPieceBag bag;

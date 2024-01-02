@@ -41,6 +41,9 @@ void TetrisPrintVerboseInfo(TetrisGameState *s)
     LOG_EXPR_KEY(s->keyLeft);
     LOG_EXPR_KEY(s->keySoftDrop);
     LOG_EXPR_INT(s->countLinesFull);
+    LOG_EXPR_INT(s->gravity);
+    LOG_EXPR_INT(s->level);
+    LOG_EXPR_INT((s->level*s->level)/100);
     LOG_EXPR_BOOL(s->fallPiece.landed);
     LOG_EXPR_BOOL(s->fallPiece.locked);
     LOG_EXPR_BOOL(s->isGameOver);
