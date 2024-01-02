@@ -1,4 +1,4 @@
-void TetrisDrawGameJar(TetrisGameState *s, int posX, int posY, int width, int height)
+void TetrisDrawGameJar(const TetrisGameState *s, int posX, int posY, int width, int height)
 {
     float cellX = (float)width / TETRIS_JAR_WIDTH;
     float cellY = (float)height / TETRIS_JAR_HEIGHT;
@@ -23,7 +23,9 @@ void TetrisDrawGameJar(TetrisGameState *s, int posX, int posY, int width, int he
                 posY + cellY * y,
                 ceilf(cellX),
                 ceilf(cellY),
-                ColorBrightness(tetris_colors[TETRIS_COLOR_CELL_FIRST + TETRIS_JAR_AT(*s, x, y).type], -0.1)
+                ColorBrightness(tetris_colors[TETRIS_COLOR_CELL_FIRST + TETRIS_JAR_AT(*s, x, y).type],
+                    s->maskLinesFull[y+TETRIS_JAR_HEIGHT] ? 0.2 : -0.15
+                )
             );
         }
     }
@@ -31,10 +33,34 @@ void TetrisDrawGameJar(TetrisGameState *s, int posX, int posY, int width, int he
     #define piece (s->fallPiece)
     if (piece.locked) return;
 
-    for (int y = 0; y < TETRIS_PIECE_HEIGHT; y++)
-    {
-        for (int x = 0; x < TETRIS_PIECE_WIDTH; x++)
-        {
+    int lineThick = (int)roundf(fmin(cellX, cellY) * .2);
+
+    for (int y = 0; y < TETRIS_PIECE_HEIGHT; y++) {
+        for (int x = 0; x < TETRIS_PIECE_WIDTH; x++) {
+            if (TETRIS_PIECE_SHAPE_AT(tetris_piece_shapes_datas[piece.type][piece.rotation], x, y) == 0)
+                continue;
+
+            Color color =
+                ColorAlpha(
+                    WHITE,
+                    (float)(10 - max(s->frame - s->frameMovement, 0)) / 10
+                );
+
+            DrawRectangleLinesEx(
+                (Rectangle) {
+                    posX + cellX * (x + piece.posX) - lineThick,
+                    posY + cellY * (y + piece.posY) - lineThick,
+                    ceilf(cellX) + lineThick * 2,
+                    ceilf(cellY) + lineThick * 2,
+                },
+                lineThick,
+                color
+            );
+        }
+    }
+
+    for (int y = 0; y < TETRIS_PIECE_HEIGHT; y++) {
+        for (int x = 0; x < TETRIS_PIECE_WIDTH; x++) {
             if (TETRIS_PIECE_SHAPE_AT(tetris_piece_shapes_datas[piece.type][piece.rotation], x, y) == 0)
                 continue;
 

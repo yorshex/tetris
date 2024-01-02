@@ -104,7 +104,7 @@ typedef struct {
     int32_t frameUnland; // the frame the current piece was moved on empty space after being landed
     int32_t frameLock; // the frame the current piece was locked
     int32_t frameSpawn; // the frame the current piece was spawned
-    int32_t frameFall; // last frame a piece was moved down by gravitation
+    int32_t frameFall; // last frame a piece was moved down by gravity
     int32_t frameMovement; // last a movement (right,left,rotate) was frame
     int32_t frameRepeat; // last frame an auto-repeat was mae
     int32_t countSafeMove; // the amount
@@ -120,12 +120,16 @@ typedef struct {
     int32_t delayRepeatFirst; // delayed auto shift - DAS
     int32_t delayFall; // how much frames it takes for a piece to fall down for one cell
     int32_t factorSoftDrop; // soft drop factor - SDF
-    int32_t thresholdSafeMove; // the amount of movements the player can make without falling before being moved down or locked forcefully
-    int32_t thresholdSafeRotation; // the amount of movements the player can make without falling before being moved down or locked forcefully
+    int32_t thresholdSafeMove; // the amount of moves the player can make without falling before being moved down or locked forcefully
+    int32_t thresholdSafeRotation; // the amount of rotations the player can make without falling before being moved down or locked forcefully
 
+    int countLinesFull;
+    bool maskLinesFull[TETRIS_JAR_HEIGHT * 2];
     TetrisPieceBag bag;
     TetrisCell board[TETRIS_JAR_AREA * 2];
     TetrisFallingPiece fallPiece;
+
+    bool isGameOver;
 } TetrisGameState;
 
 #define TETRIS_PIECE_SHAPE_AT(shape, x, y) \

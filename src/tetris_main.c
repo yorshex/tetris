@@ -2,12 +2,12 @@ TetrisGameState game = {
     .delayFall = 60,
     .delayLock = 30,
     .delaySpawn = 30,
-    .thresholdSafeMove = 11,
+    .thresholdSafeMove = 15,
     .thresholdSafeRotation = 11,
 
-    .delayRepeatFirst = 12,
+    .delayRepeatFirst = 10,
     .delayRepeat = 0,
-    .factorSoftDrop = 1000,
+    .factorSoftDrop = -1,
 };
 
 #define WIDTH 800
@@ -26,14 +26,14 @@ int main(void)
     while (1) {
         BeginDrawing();
         ClearBackground(RAYWHITE);
-        TetrisDrawGameJar(&game, 50, 50, 150, 300);
+        TetrisDrawGameJar(&game, 325, 75, 150, 300);
         EndDrawing();
+
+        TetrisFrame(&game);
 
         TetrisPrintVerboseInfo(&game);
 
-        if (WindowShouldClose()) break;
-
-        TetrisFrame(&game);
+        if (game.isGameOver || WindowShouldClose()) break;
     }
 
     return 0;

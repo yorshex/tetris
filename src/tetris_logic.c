@@ -50,7 +50,7 @@ bool TetrisCheckCollisionDisplace(TetrisGameState *s, int displaceX, int displac
 
     for (int x = 0; x < TETRIS_PIECE_WIDTH; x++) {
         for (int y = 0; y < TETRIS_PIECE_WIDTH; y++) {
-            if (! TETRIS_PIECE_SHAPE_AT(*fallPieceShape, x, y))
+            if (!TETRIS_PIECE_SHAPE_AT(*fallPieceShape, x, y))
                 continue;
             if (TetrisCellOccupied(
                     s,
@@ -127,10 +127,49 @@ bool TetrisRotateFallPieceSRS(TetrisGameState *s, TetrisRotationDirection r)
 
 #undef WALL_KICKS
 
-void TetrisFrame(TetrisGameState *s)
-{
-    s->frame++;
+bool TetrisCheckToppedOut(TetrisGameState *s) {
+    for (int y = 0; y < 2; y++)
+        for (int x = 0; x < 4; x++)
+            if (TetrisCellOccupied(s, 3+x, -3+y))
+                return true;
+    return false;
+}
 
+void TetrisCheckFullLines(TetrisGameState *s) {
+    s->countLinesFull = 0;
+
+    for (int y = -TETRIS_JAR_HEIGHT; y < TETRIS_JAR_HEIGHT; y++) {
+        for (int x = 0; x < TETRIS_JAR_WIDTH; x++)
+            if (!TetrisCellOccupied(s, x, y))
+                goto TetrisNotFull;
+        s->countLinesFull += 1;
+        s->maskLinesFull[y+TETRIS_JAR_HEIGHT] = true;
+        TetrisNotFull:
+        (void) 0; // a line that does nothing to avoid -Wc2x-extension
+    }
+}
+
+void TetrisRemoveFullLines(TetrisGameState *s) {
+    int y = TETRIS_JAR_HEIGHT-1;
+    int yNew = TETRIS_JAR_HEIGHT-1;
+
+    for (; y >= -TETRIS_JAR_HEIGHT; y--) {
+        if (s->maskLinesFull[y+TETRIS_JAR_HEIGHT]) {
+            s->maskLinesFull[y+TETRIS_JAR_HEIGHT] = false;
+            continue;
+        }
+        for (int x = 0; x < TETRIS_JAR_WIDTH; x++)
+            TETRIS_JAR_AT_UNSAFE(*s, x, yNew) = TETRIS_JAR_AT_UNSAFE(*s, x, y);
+        yNew--;
+    }
+
+    for (; yNew >= -TETRIS_JAR_HEIGHT; yNew--)
+        for (int x = 0; x < TETRIS_JAR_WIDTH; x++)
+            TETRIS_JAR_AT_UNSAFE(*s, x, yNew) = (TetrisCell){.type = TETRIS_CELL_BLANK};
+}
+
+void TetrisHandleInput(TetrisGameState *s)
+{
     bool pressedRight = false;
     bool pressedLeft = false;
 
@@ -201,18 +240,47 @@ void TetrisFrame(TetrisGameState *s)
             }
         }
     }
+}
+
+void TetrisDoGravity(TetrisGameState *s)
+{
+    int32_t factoredFallDelay = s->delayFall / (s->keySoftDrop.down ? s->factorSoftDrop : 1);
+    bool succeededFallDelay = s->frame - max(max(s->frameFall, s->frameUnland), s->frameSpawn) >= factoredFallDelay;
+
+    if (succeededFallDelay) {
+        s->frameFall = s->frame;
+        s->fallPiece.posY += 1;
+        TetrisCheckLanded(s);
+    }
+}
+
+void TetrisFallPieceLock(TetrisGameState *s)
+{
+    s->frameLock = s->frame;
+    TetrisFallPiecePlace(s);
+    s->fallPiece.locked = true;
+    TetrisCheckFullLines(s);
+}
+
+void TetrisDoLanded(TetrisGameState *s)
+{
+    bool succeededSafeMoveThreshold = s->countSafeMove >= s->thresholdSafeMove;
+    bool succeededSafeRotationThreshold = s->countSafeRotation >= s->thresholdSafeRotation;
+    bool succeededLockDelay = s->frame - max(s->frameLand, s->frameMovement) >= s->delayLock;
+
+    if (succeededLockDelay || succeededSafeMoveThreshold || succeededSafeRotationThreshold) {
+        TetrisFallPieceLock(s);
+    }
+}
+
+void TetrisFrame(TetrisGameState *s)
+{
+    s->frame++;
+
+    TetrisHandleInput(s);
 
     if (!s->fallPiece.landed && !s->fallPiece.locked)
-    {
-        int32_t factoredFallDelay = s->delayFall / (s->keySoftDrop.down ? s->factorSoftDrop : 1);
-        bool succeededFallDelay = s->frame - max(max(s->frameFall, s->frameUnland), s->frameSpawn) >= factoredFallDelay;
-
-        if (succeededFallDelay) {
-            s->frameFall = s->frame;
-            s->fallPiece.posY += 1;
-            TetrisCheckLanded(s);
-        }
-    }
+        TetrisDoGravity(s);
 
     if (!(s->fallPiece.posY <= s->fallPiece.maxY)) {
         s->countSafeRotation = 0;
@@ -220,27 +288,20 @@ void TetrisFrame(TetrisGameState *s)
     }
 
     if (s->fallPiece.landed && !s->fallPiece.locked)
-    {
-        bool succeededSafeMoveThreshold = s->countSafeMove >= s->thresholdSafeMove;
-        bool succeededSafeRotationThreshold = s->countSafeRotation >= s->thresholdSafeRotation;
-        bool succeededLockDelay = s->frame - max(s->frameLand, s->frameMovement) >= s->delayLock;
-
-        if (succeededLockDelay || succeededSafeMoveThreshold || succeededSafeRotationThreshold) {
-            s->frameLock = s->frame;
-            TetrisFallPiecePlace(s);
-            s->fallPiece.locked = true;
-        }
-    }
+        TetrisDoLanded(s);
 
     if (s->fallPiece.locked) {
         bool succeededSpawnDelay = s->frame - s->frameLock >= s->delaySpawn;
 
         if (succeededSpawnDelay) {
             s->frameSpawn = s->frame;
+            TetrisRemoveFullLines(s);
             TetrisNextFallPiece(s);
             TetrisCheckLanded(s);
         }
     }
 
     s->fallPiece.maxY = max(s->fallPiece.maxY, s->fallPiece.posY);
+
+    s->isGameOver = TetrisCheckToppedOut(s);
 }
