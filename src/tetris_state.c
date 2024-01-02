@@ -92,6 +92,7 @@ typedef struct {
     TetrisPieceType type;
     int32_t posX;
     int32_t posY;
+    int32_t maxY;
     int32_t rotation;
     bool landed;
     bool locked;

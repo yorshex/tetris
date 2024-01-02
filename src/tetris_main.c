@@ -2,8 +2,8 @@ TetrisGameState game = {
     .delayFall = 60,
     .delayLock = 30,
     .delaySpawn = 30,
-    .thresholdSafeMove = 15,
-    .thresholdSafeRotation = 15,
+    .thresholdSafeMove = 11,
+    .thresholdSafeRotation = 11,
 
     .delayRepeatFirst = 12,
     .delayRepeat = 0,

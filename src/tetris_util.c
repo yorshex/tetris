@@ -3,6 +3,11 @@ extern inline int max(int a, int b) {
     return a;
 }
 
+extern inline int repeat(int len, int n) {
+    if ((n %= len) < 0) n += len;
+    return n;
+}
+
 extern inline void TetrisSwap(int *restrict a, int *restrict b) {
     static int temp;
     temp = *a;
@@ -28,6 +33,7 @@ void TetrisPrintVerboseInfo(TetrisGameState *s)
     LOG_EXPR_INT(s->frameLock);
     LOG_EXPR_INT(s->frameSpawn);
     LOG_EXPR_INT(s->frameFall);
+    LOG_EXPR_INT(s->frameRepeat);
     LOG_EXPR_INT(s->frameMovement);
     LOG_EXPR_INT(s->countSafeMove);
     LOG_EXPR_INT(s->countSafeRotation);
@@ -56,4 +62,5 @@ void TetrisPrintVerboseInfo(TetrisGameState *s)
             );
 #undef LOG_EXPR_INT
 #undef LOG_EXPR_BOOL
+#undef LOG_EXPR_KEY
 }

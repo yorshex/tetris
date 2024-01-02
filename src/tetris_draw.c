@@ -23,12 +23,14 @@ void TetrisDrawGameJar(TetrisGameState *s, int posX, int posY, int width, int he
                 posY + cellY * y,
                 ceilf(cellX),
                 ceilf(cellY),
-                tetris_colors[TETRIS_COLOR_CELL_FIRST + TETRIS_JAR_AT(*s, x, y).type]
+                ColorBrightness(tetris_colors[TETRIS_COLOR_CELL_FIRST + TETRIS_JAR_AT(*s, x, y).type], -0.1)
             );
         }
     }
 
     #define piece (s->fallPiece)
+    if (piece.locked) return;
+
     for (int y = 0; y < TETRIS_PIECE_HEIGHT; y++)
     {
         for (int x = 0; x < TETRIS_PIECE_WIDTH; x++)
