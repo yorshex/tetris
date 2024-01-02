@@ -3,7 +3,7 @@ extern inline int max(int a, int b) {
     return a;
 }
 
-extern inline int repeat(int len, int n) {
+extern inline int repeat(int n, int len) {
     if ((n %= len) < 0) n += len;
     return n;
 }

@@ -1,3 +1,32 @@
+void TetrisDrawPieceShape(TetrisPieceType type, int rotation, int posX, int posY, int width, int height, Color color)
+{
+    float cellX = (float)width / TETRIS_PIECE_WIDTH;
+    float cellY = (float)height / TETRIS_PIECE_HEIGHT;
+
+    for (int y = 0; y < TETRIS_PIECE_HEIGHT; y++) {
+        for (int x = 0; x < TETRIS_PIECE_HEIGHT; x++)
+        {
+            if (TETRIS_PIECE_SHAPE_AT(tetris_piece_shapes_datas[type][repeat(rotation, TETRIS_PIECE_POSSIBLE_ROTATIONS)], x, y) == 0)
+                continue;
+
+            DrawRectangle(
+                posX + cellX * x,
+                posY + cellY * y,
+                ceilf(cellX),
+                ceilf(cellY),
+                color
+            );
+        }
+    }
+}
+
+void TetrisDrawHoldPiece(TetrisGameState *s, int posX, int posY, int width, int height) {
+    TetrisPieceType type = s->holdPieceType;
+    Color color = ColorBrightness(tetris_colors[TETRIS_COLOR_CELL_FIRST + type], s->fallPiece.held ? -.5 : 0);
+
+    TetrisDrawPieceShape(type, 0, posX, posY, width, height, color);
+}
+
 void TetrisDrawGameJar(const TetrisGameState *s, int posX, int posY, int width, int height)
 {
     float cellX = (float)width / TETRIS_JAR_WIDTH;

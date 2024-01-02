@@ -1,7 +1,7 @@
 TetrisGameState game = {
-    .delayFall = 60,
+    .gravity = TETRIS_G/60,
     .delayLock = 30,
-    .delaySpawn = 30,
+    .delaySpawn = 0,
     .thresholdSafeMove = 15,
     .thresholdSafeRotation = 11,
 
@@ -26,6 +26,10 @@ int main(void)
     while (1) {
         BeginDrawing();
         ClearBackground(RAYWHITE);
+        if (game.holdPieceType != (TetrisPieceType)TETRIS_PIECE_FIRST - 1) {
+            TetrisDrawHoldPiece(&game, 255, 85, 60, 60);
+            DrawText("Hold", 245, 75, 20, BLACK);
+        }
         TetrisDrawGameJar(&game, 325, 75, 150, 300);
         EndDrawing();
 

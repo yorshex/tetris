@@ -96,7 +96,10 @@ typedef struct {
     int32_t rotation;
     bool landed;
     bool locked;
+    bool held;
 } TetrisFallingPiece;
+
+#define TETRIS_G 240
 
 typedef struct {
     int32_t frame; // current frame
@@ -109,6 +112,7 @@ typedef struct {
     int32_t frameRepeat; // last frame an auto-repeat was mae
     int32_t countSafeMove; // the amount
     int32_t countSafeRotation; // the amount
+    int32_t g;
     TetrisKeyState keyRight;
     TetrisKeyState keyLeft;
     TetrisKeyState keySoftDrop;
@@ -118,7 +122,7 @@ typedef struct {
     int32_t delayLock; // lock delay
     int32_t delayRepeat; // auto repeat rate - ARR
     int32_t delayRepeatFirst; // delayed auto shift - DAS
-    int32_t delayFall; // how much frames it takes for a piece to fall down for one cell
+    int32_t gravity; // gravity
     int32_t factorSoftDrop; // soft drop factor - SDF
     int32_t thresholdSafeMove; // the amount of moves the player can make without falling before being moved down or locked forcefully
     int32_t thresholdSafeRotation; // the amount of rotations the player can make without falling before being moved down or locked forcefully
@@ -128,6 +132,7 @@ typedef struct {
     TetrisPieceBag bag;
     TetrisCell board[TETRIS_JAR_AREA * 2];
     TetrisFallingPiece fallPiece;
+    TetrisPieceType holdPieceType;
 
     bool isGameOver;
 } TetrisGameState;

@@ -10,14 +10,80 @@ TetrisPieceType TetrisBagNext(TetrisGameState *s) {
     return piece;
 }
 
-void TetrisNextFallPiece(TetrisGameState *s) {
+// check whether a cell is occupied
+extern inline bool TetrisCellOccupied(TetrisGameState *s, int posX, int posY) {
+    return TETRIS_JAR_AT(*s, posX, posY).type >= 0;
+}
+
+void TetrisCheckFullLines(TetrisGameState *s) {
+    s->countLinesFull = 0;
+
+    for (int y = -TETRIS_JAR_HEIGHT; y < TETRIS_JAR_HEIGHT; y++) {
+        for (int x = 0; x < TETRIS_JAR_WIDTH; x++)
+            if (!TetrisCellOccupied(s, x, y))
+                goto TetrisNotFull;
+        s->countLinesFull += 1;
+        s->maskLinesFull[y+TETRIS_JAR_HEIGHT] = true;
+        TetrisNotFull:
+        (void) 0; // a line that does nothing to avoid -Wc2x-extension
+    }
+}
+
+void TetrisFallPieceInit(TetrisGameState *s, TetrisPieceType type, bool held) {
     s->fallPiece.posX = 3;
     s->fallPiece.posY = -4;
     s->fallPiece.maxY = -4;
     s->fallPiece.locked = false;
     s->fallPiece.landed = false;
     s->fallPiece.rotation = 0;
-    s->fallPiece.type = TetrisBagNext(s);
+    s->fallPiece.type = type;
+    s->fallPiece.held = held;
+}
+
+// get the shape of the falling piece
+extern inline TetrisPieceShape *TetrisFallPieceShape(TetrisGameState *s, int rotate) {
+    return (TetrisPieceShape *)
+        &tetris_piece_shapes_datas
+         [s->fallPiece.type]
+         [repeat(s->fallPiece.rotation + rotate, TETRIS_PIECE_POSSIBLE_ROTATIONS)];
+}
+
+void TetrisFallPiecePlace(TetrisGameState *s)
+{
+    TetrisPieceShape *fallPieceShape = TetrisFallPieceShape(s, 0);
+
+    for (int y = 0; y < TETRIS_PIECE_HEIGHT; y++) {
+        for (int x = 0; x < TETRIS_PIECE_WIDTH; x++) {
+            if (!TETRIS_PIECE_SHAPE_AT(*fallPieceShape, x, y))
+                continue;
+            int posX = s->fallPiece.posX + x;
+            int posY = s->fallPiece.posY + y;
+            TetrisCellType type = (TetrisCellType)s->fallPiece.type;
+            TETRIS_JAR_AT_UNSAFE(*s, posX, posY) = (TetrisCell){.type = type};
+        }
+    }
+}
+
+void TetrisFallPieceLock(TetrisGameState *s) {
+    s->frameLock = s->frame;
+    s->g = TETRIS_G;
+    TetrisFallPiecePlace(s);
+    s->fallPiece.locked = true;
+    TetrisCheckFullLines(s);
+}
+
+
+void TetrisNextFallPiece(TetrisGameState *s) {
+    TetrisFallPieceInit(s, TetrisBagNext(s), false);
+}
+
+void TetrisHoldFallPiece(TetrisGameState *s) {
+    TetrisPieceType type =
+        s->holdPieceType != (TetrisPieceType)TETRIS_PIECE_FIRST - 1 ?
+        s->holdPieceType :
+        TetrisBagNext(s);
+    s->holdPieceType = s->fallPiece.type;
+    TetrisFallPieceInit(s, type, true);
 }
 
 void TetrisGameStateInit(TetrisGameState *s) {
@@ -31,16 +97,9 @@ void TetrisGameStateInit(TetrisGameState *s) {
     TetrisShuffleBagHalf(s, 1);
 
     TetrisNextFallPiece(s);
-}
 
-// get the shape of the falling piece
-extern inline TetrisPieceShape *TetrisFallPieceShape(TetrisGameState *s, int rotate) {
-    return (TetrisPieceShape *) &tetris_piece_shapes_datas[s->fallPiece.type][repeat(TETRIS_PIECE_POSSIBLE_ROTATIONS, s->fallPiece.rotation + rotate)];
-}
-
-// check whether a cell is occupied
-extern inline bool TetrisCellOccupied(TetrisGameState *s, int posX, int posY) {
-    return TETRIS_JAR_AT(*s, posX, posY).type >= 0;
+    s->holdPieceType = TETRIS_PIECE_FIRST - 1;
+    s->g = TETRIS_G;
 }
 
 // check if the falling piece overlaps with something if it's moved and/or rotated
@@ -68,25 +127,11 @@ void TetrisCheckLanded(TetrisGameState *s)
     bool collis = TetrisCheckCollisionDisplace(s, 0, 1, 0);
     if (collis && !s->fallPiece.landed)
         s->frameLand = s->frame;
-    else if (!collis && s->fallPiece.landed)
+    else if (!collis && s->fallPiece.landed) {
         s->frameUnland = s->frame;
-    s->fallPiece.landed = collis;
-}
-
-void TetrisFallPiecePlace(TetrisGameState *s)
-{
-    TetrisPieceShape *fallPieceShape = TetrisFallPieceShape(s, 0);
-
-    for (int y = 0; y < TETRIS_PIECE_HEIGHT; y++) {
-        for (int x = 0; x < TETRIS_PIECE_WIDTH; x++) {
-            if (!TETRIS_PIECE_SHAPE_AT(*fallPieceShape, x, y))
-                continue;
-            int posX = s->fallPiece.posX + x;
-            int posY = s->fallPiece.posY + y;
-            TetrisCellType type = (TetrisCellType)s->fallPiece.type;
-            TETRIS_JAR_AT_UNSAFE(*s, posX, posY) = (TetrisCell){.type = type};
-        }
+        s->g = 0;
     }
+    s->fallPiece.landed = collis;
 }
 
 extern inline void TetrisSetKey(TetrisGameState *s, TetrisKeyState *k, bool down) {
@@ -101,7 +146,7 @@ bool TetrisDisplaceFallPiece(TetrisGameState *s, int displaceX, int displaceY, i
     if (result == false) {
         s->fallPiece.posX += displaceX;
         s->fallPiece.posY += displaceY;
-        s->fallPiece.rotation = repeat(TETRIS_PIECE_POSSIBLE_ROTATIONS, s->fallPiece.rotation + rotate);
+        s->fallPiece.rotation = repeat(s->fallPiece.rotation + rotate, TETRIS_PIECE_POSSIBLE_ROTATIONS);
     }
     TetrisCheckLanded(s);
 
@@ -135,20 +180,6 @@ bool TetrisCheckToppedOut(TetrisGameState *s) {
     return false;
 }
 
-void TetrisCheckFullLines(TetrisGameState *s) {
-    s->countLinesFull = 0;
-
-    for (int y = -TETRIS_JAR_HEIGHT; y < TETRIS_JAR_HEIGHT; y++) {
-        for (int x = 0; x < TETRIS_JAR_WIDTH; x++)
-            if (!TetrisCellOccupied(s, x, y))
-                goto TetrisNotFull;
-        s->countLinesFull += 1;
-        s->maskLinesFull[y+TETRIS_JAR_HEIGHT] = true;
-        TetrisNotFull:
-        (void) 0; // a line that does nothing to avoid -Wc2x-extension
-    }
-}
-
 void TetrisRemoveFullLines(TetrisGameState *s) {
     int y = TETRIS_JAR_HEIGHT-1;
     int yNew = TETRIS_JAR_HEIGHT-1;
@@ -166,6 +197,15 @@ void TetrisRemoveFullLines(TetrisGameState *s) {
     for (; yNew >= -TETRIS_JAR_HEIGHT; yNew--)
         for (int x = 0; x < TETRIS_JAR_WIDTH; x++)
             TETRIS_JAR_AT_UNSAFE(*s, x, yNew) = (TetrisCell){.type = TETRIS_CELL_BLANK};
+}
+
+void TetrisHardDropFallPiece(TetrisGameState *s) {
+    s->frameFall = s->frame;
+    while (!s->fallPiece.landed) {
+        s->fallPiece.posY += 1;
+        TetrisCheckLanded(s);
+    }
+    TetrisFallPieceLock(s);
 }
 
 void TetrisHandleInput(TetrisGameState *s)
@@ -219,6 +259,16 @@ void TetrisHandleInput(TetrisGameState *s)
             }
         }
 
+        if (IsKeyPressed(KEY_C) && !s->fallPiece.held) {
+            s->frameSpawn = s->frame;
+            TetrisHoldFallPiece(s);
+            TetrisCheckLanded(s);
+        }
+
+        if (IsKeyPressed(KEY_SPACE) && !s->fallPiece.locked) {
+            TetrisHardDropFallPiece(s);
+        }
+
         bool doRepeatRight = s->keyRight.down && (!s->keyLeft.down || s->keyRight.frameDown >= s->keyLeft.frameDown);
         bool doRepeatLeft = s->keyLeft.down && (!s->keyRight.down || s->keyRight.frameDown < s->keyLeft.frameDown);
         bool succeededRepeatDelay = s->frame - s->frameRepeat >= s->delayRepeat;
@@ -242,24 +292,23 @@ void TetrisHandleInput(TetrisGameState *s)
     }
 }
 
-void TetrisDoGravity(TetrisGameState *s)
+void TetrisDoMidAir(TetrisGameState *s)
 {
-    int32_t factoredFallDelay = s->delayFall / (s->keySoftDrop.down ? s->factorSoftDrop : 1);
-    bool succeededFallDelay = s->frame - max(max(s->frameFall, s->frameUnland), s->frameSpawn) >= factoredFallDelay;
+    if (s->keySoftDrop.down && s->factorSoftDrop < 0) {
+        s->frameFall = s->frame;
+        while (!s->fallPiece.landed) {
+            s->fallPiece.posY += 1;
+            TetrisCheckLanded(s);
+        }
+    }
 
-    if (succeededFallDelay) {
+    s->g += s->gravity * (s->keySoftDrop.down ? s->factorSoftDrop : 1);
+
+    for (; s->g > TETRIS_G && !s->fallPiece.landed; s->g -= TETRIS_G) {
         s->frameFall = s->frame;
         s->fallPiece.posY += 1;
         TetrisCheckLanded(s);
     }
-}
-
-void TetrisFallPieceLock(TetrisGameState *s)
-{
-    s->frameLock = s->frame;
-    TetrisFallPiecePlace(s);
-    s->fallPiece.locked = true;
-    TetrisCheckFullLines(s);
 }
 
 void TetrisDoLanded(TetrisGameState *s)
@@ -280,7 +329,7 @@ void TetrisFrame(TetrisGameState *s)
     TetrisHandleInput(s);
 
     if (!s->fallPiece.landed && !s->fallPiece.locked)
-        TetrisDoGravity(s);
+        TetrisDoMidAir(s);
 
     if (!(s->fallPiece.posY <= s->fallPiece.maxY)) {
         s->countSafeRotation = 0;
