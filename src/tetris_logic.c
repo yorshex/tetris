@@ -341,12 +341,13 @@ void TetrisFrame(TetrisGameState *s)
         TetrisDoLanded(s);
 
     if (s->fallPiece.locked) {
-        bool succeededSpawnDelay = s->frame - s->frameLock >= s->delaySpawn;
+        bool succeededSpawnDelay = s->frame - s->frameLock >= (s->countLinesFull < 1 ? s->delaySpawn : s->delaySpawnClear);
 
         if (succeededSpawnDelay) {
             s->frameSpawn = s->frame;
             s->level += (1 + (s->countLinesFull > 2 ? s->countLinesFull + 2 : s->countLinesFull));
             s->gravity = TETRIS_G/60 + (s->level*s->level)/100;
+            s->delayLock = s->gravity > TETRIS_G * 2.5 ? 9 : (s->gravity > TETRIS_G * 1.5 ? 14 : 20);
             TetrisRemoveFullLines(s);
             TetrisNextFallPiece(s);
             TetrisCheckLanded(s);

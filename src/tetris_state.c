@@ -58,20 +58,6 @@ typedef enum {
 } TetrisCellType;
 
 typedef enum {
-    TETRIS_COLOR_CELL_FIRST = TETRIS_PIECE_FIRST,
-    TETRIS_COLOR_CELL_O = TETRIS_PIECE_O,
-    TETRIS_COLOR_CELL_I = TETRIS_PIECE_I,
-    TETRIS_COLOR_CELL_T = TETRIS_PIECE_T,
-    TETRIS_COLOR_CELL_L = TETRIS_PIECE_L,
-    TETRIS_COLOR_CELL_J = TETRIS_PIECE_J,
-    TETRIS_COLOR_CELL_S = TETRIS_PIECE_S,
-    TETRIS_COLOR_CELL_Z = TETRIS_PIECE_Z,
-    TETRIS_COLOR_CELL_LAST = TETRIS_PIECE_LAST,
-    TETRIS_COLOR_JAR_BG = TETRIS_COLOR_CELL_LAST,
-    TETRIS_COLOR_LAST,
-} TetrisColorIndex;
-
-typedef enum {
     TETRIS_CW,
     TETRIS_CCW,
     TETRIS_POSSIBLE_ROTATION_DIRECTIONS,
@@ -149,17 +135,6 @@ typedef struct {
     ( ((x) >= TETRIS_JAR_WIDTH || (x) < 0 || (y) >= TETRIS_JAR_HEIGHT || (y) < -TETRIS_JAR_HEIGHT) ? \
       (TetrisCell){.type = TETRIS_CELL_OUT_OF_BOUNDS} : \
       (game).board[x + TETRIS_JAR_WIDTH * (y + TETRIS_JAR_HEIGHT)] )
-
-const Color tetris_colors[TETRIS_COLOR_LAST] = {
-    [TETRIS_COLOR_CELL_O] = YELLOW,
-    [TETRIS_COLOR_CELL_I] = SKYBLUE,
-    [TETRIS_COLOR_CELL_T] = PURPLE,
-    [TETRIS_COLOR_CELL_L] = ORANGE,
-    [TETRIS_COLOR_CELL_J] = BLUE,
-    [TETRIS_COLOR_CELL_S] = GREEN,
-    [TETRIS_COLOR_CELL_Z] = RED,
-    [TETRIS_COLOR_JAR_BG] = LIGHTGRAY,
-};
 
 const TetrisPieceWallKicksData tetris_piece_wall_kicks_datas[2] = {
     /*

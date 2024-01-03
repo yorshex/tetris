@@ -1,3 +1,30 @@
+typedef enum {
+    TETRIS_COLOR_CELL_FIRST = TETRIS_PIECE_FIRST,
+    TETRIS_COLOR_CELL_O = TETRIS_PIECE_O,
+    TETRIS_COLOR_CELL_I = TETRIS_PIECE_I,
+    TETRIS_COLOR_CELL_T = TETRIS_PIECE_T,
+    TETRIS_COLOR_CELL_L = TETRIS_PIECE_L,
+    TETRIS_COLOR_CELL_J = TETRIS_PIECE_J,
+    TETRIS_COLOR_CELL_S = TETRIS_PIECE_S,
+    TETRIS_COLOR_CELL_Z = TETRIS_PIECE_Z,
+    TETRIS_COLOR_CELL_LAST = TETRIS_PIECE_LAST,
+    TETRIS_COLOR_JAR_BG = TETRIS_COLOR_CELL_LAST,
+    TETRIS_COLOR_TEXT_PRIMARY,
+    TETRIS_COLOR_LAST,
+} TetrisColorIndex;
+
+const Color tetris_colors[TETRIS_COLOR_LAST] = {
+    [TETRIS_COLOR_CELL_O] = YELLOW,
+    [TETRIS_COLOR_CELL_I] = SKYBLUE,
+    [TETRIS_COLOR_CELL_T] = PURPLE,
+    [TETRIS_COLOR_CELL_L] = ORANGE,
+    [TETRIS_COLOR_CELL_J] = BLUE,
+    [TETRIS_COLOR_CELL_S] = GREEN,
+    [TETRIS_COLOR_CELL_Z] = RED,
+    [TETRIS_COLOR_JAR_BG] = DARKGRAY,
+    [TETRIS_COLOR_TEXT_PRIMARY] = LIGHTGRAY,
+};
+
 void TetrisDrawPieceShape(TetrisPieceType type, int rotation, int posX, int posY, int width, int height, Color color)
 {
     float cellX = (float)width / TETRIS_PIECE_WIDTH;
@@ -104,7 +131,7 @@ void TetrisDrawGameJar(const TetrisGameState *s, int posX, int posY, int width, 
             cellX * 4,
             cellY * 4,
             lineThickShadow,
-            ColorAlpha(ColorBrightness(tetris_colors[TETRIS_COLOR_CELL_FIRST + piece.type], -0.75), 0.3)
+            ColorAlpha(ColorBrightness(tetris_colors[TETRIS_COLOR_CELL_FIRST + piece.type], 0.75), 0.3)
         );
 
     for (int y = 0; y < TETRIS_PIECE_HEIGHT; y++) {
