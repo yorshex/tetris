@@ -10,13 +10,15 @@ typedef enum {
     TETRIS_KEY_START,
     TETRIS_KEY_MOVE_RIGHT,
     TETRIS_KEY_MOVE_LEFT,
-    TETRIS_KEY_MOVE_ROTATE_CW,
-    TETRIS_KEY_MOVE_ROTATE_CCW,
+    TETRIS_KEY_ROTATE_CW,
+    TETRIS_KEY_ROTATE_CCW,
     TETRIS_KEY_HARD_DROP,
     TETRIS_KEY_SOFT_DROP,
     TETRIS_KEY_HOLD,
     TETRIS_KEY_LAST,
 } TetrisKey;
+
+typedef int TetrisKeybindings[TETRIS_KEY_LAST];
 
 typedef struct {
     bool down;
@@ -112,8 +114,10 @@ typedef struct {
     int32_t factorSoftDrop; // soft drop factor - SDF
     int32_t thresholdSafeMove; // the amount of moves the player can make without falling before being moved down or locked forcefully
     int32_t thresholdSafeRotation; // the amount of rotations the player can make without falling before being moved down or locked forcefully
+    TetrisKeybindings keys;
 
     int32_t level;
+    int32_t score;
 
     int countLinesFull;
     bool maskLinesFull[TETRIS_JAR_HEIGHT * 2];

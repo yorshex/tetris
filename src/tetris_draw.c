@@ -9,7 +9,9 @@ typedef enum {
     TETRIS_COLOR_CELL_Z = TETRIS_PIECE_Z,
     TETRIS_COLOR_CELL_LAST = TETRIS_PIECE_LAST,
     TETRIS_COLOR_JAR_BG = TETRIS_COLOR_CELL_LAST,
+    TETRIS_COLOR_HOLD_UNAVAILABLE,
     TETRIS_COLOR_TEXT_PRIMARY,
+    TETRIS_COLOR_TEXT_SECONDARY,
     TETRIS_COLOR_LAST,
 } TetrisColorIndex;
 
@@ -22,7 +24,9 @@ const Color tetris_colors[TETRIS_COLOR_LAST] = {
     [TETRIS_COLOR_CELL_S] = GREEN,
     [TETRIS_COLOR_CELL_Z] = RED,
     [TETRIS_COLOR_JAR_BG] = DARKGRAY,
-    [TETRIS_COLOR_TEXT_PRIMARY] = LIGHTGRAY,
+    [TETRIS_COLOR_HOLD_UNAVAILABLE] = GRAY,
+    [TETRIS_COLOR_TEXT_PRIMARY] = GRAY,
+    [TETRIS_COLOR_TEXT_SECONDARY] = WHITE,
 };
 
 void TetrisDrawPieceShape(TetrisPieceType type, int rotation, int posX, int posY, int width, int height, Color color)
@@ -74,7 +78,7 @@ void TetrisDrawPieceShapeLines(TetrisPieceType type, int rotation, int posX, int
 
 void TetrisDrawHoldPiece(TetrisGameState *s, int posX, int posY, int width, int height) {
     TetrisPieceType type = s->holdPieceType;
-    Color color = ColorBrightness(tetris_colors[TETRIS_COLOR_CELL_FIRST + type], s->fallPiece.held ? -.5 : 0);
+    Color color = s->fallPiece.held ? tetris_colors[TETRIS_COLOR_HOLD_UNAVAILABLE] : tetris_colors[TETRIS_COLOR_CELL_FIRST + type];
 
     TetrisDrawPieceShape(type, 0, posX, posY, width, height, color);
 }
