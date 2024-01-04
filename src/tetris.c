@@ -4,8 +4,6 @@
 #include <math.h>
 #include <raylib.h>
 
-bool assets_exist = false;
-
 #include "tetris_state.c"
 #include "tetris_util.c"
 #include "tetris_logic.c"

@@ -1,7 +1,7 @@
 TetrisGameState game = {
     .gravity = TETRIS_G/60,
     .delaySpawn = 0,
-    .delaySpawnClear = 14,
+    .delaySpawnClear = 20,
     .thresholdSafeMove = 15,
     .thresholdSafeRotation = 11,
 
@@ -19,6 +19,8 @@ TetrisGameState game = {
     }
 };
 
+bool assets_exist = false;
+
 #define WIDTH 800
 #define HEIGHT 450
 
@@ -31,7 +33,7 @@ int main(void)
     if (assets_exist)
         TetrisLoadAssets();
 
-    SetTraceLogLevel(LOG_DEBUG);
+    SetTraceLogLevel(LOG_INFO);
 
     SetTargetFPS(60);
     SetExitKey(KEY_Q);
@@ -43,12 +45,13 @@ int main(void)
 
         ClearBackground(BLACK);
 
+        // UI
+
         if (game.holdPieceType != (TetrisPieceType)TETRIS_PIECE_FIRST - 1) {
             TetrisDrawHoldPiece(&game, 255, 85, 60, 60);
             DrawText("Hold", 255, 75, 20, tetris_colors[TETRIS_COLOR_TEXT_PRIMARY]);
         }
 
-        DrawText(TextFormat("%i", 100 + max(game.level - game.frame / 240, 0)), 0, 0, 20, tetris_colors[TETRIS_COLOR_TEXT_SECONDARY]);
         DrawText("Level", 255, 295, 20, tetris_colors[TETRIS_COLOR_TEXT_PRIMARY]);
         DrawText(TextFormat("%i", game.level), 255, 315, 20, tetris_colors[TETRIS_COLOR_TEXT_SECONDARY]);
         DrawText("Score", 255, 335, 20, tetris_colors[TETRIS_COLOR_TEXT_PRIMARY]);
@@ -62,9 +65,15 @@ int main(void)
                 tetris_colors[TETRIS_COLOR_CELL_FIRST + game.bag.values[repeat(game.bag.index+i, TETRIS_BAG_SIZE)]]
             );
 
+        DrawText("Time", 485, 335, 20, tetris_colors[TETRIS_COLOR_TEXT_PRIMARY]);
+        DrawText(TextFormat("%im%is %if", game.frame/60/60, game.frame/60%60, game.frame%60),
+                485, 355, 20, tetris_colors[TETRIS_COLOR_TEXT_SECONDARY]);
+
+        // SOUND
         if (game.frameSpawn == game.frame)
             PlaySound(tetris_sounds[game.bag.values[repeat(game.bag.index, TETRIS_BAG_SIZE)]]);
 
+        // BOARD
         TetrisDrawGameJar(&game, 325, 75, 150, 300);
 
         EndDrawing();
