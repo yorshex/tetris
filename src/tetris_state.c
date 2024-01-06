@@ -92,7 +92,6 @@ typedef struct {
 typedef struct {
     int32_t frame; // current frame
     int32_t frameLand; // the frame the current piece landed on something
-    int32_t frameUnland; // the frame the current piece was moved on empty space after being landed
     int32_t frameLock; // the frame the current piece was locked
     int32_t frameSpawn; // the frame the current piece was spawned
     int32_t frameFall; // last frame a piece was moved down by gravity
@@ -106,7 +105,6 @@ typedef struct {
     TetrisKeyState keyRight;
     TetrisKeyState keyLeft;
     TetrisKeyState keySoftDrop;
-    int presses[TETRIS_KEY_LAST];
 
     int32_t delaySpawn; // spawn delay - jp. ARE
     int32_t delaySpawnClear; // ARE after filling a line

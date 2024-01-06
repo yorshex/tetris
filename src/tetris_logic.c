@@ -166,10 +166,8 @@ bool TetrisCheckCollisionDisplace(const TetrisGameState *s, int dx, int dy, int 
 void TetrisCheckLanded(TetrisGameState *s)
 {
     bool collis = TetrisCheckCollisionDisplace(s, 0, 1, 0);
-    if (collis && !s->fallPiece.landed)
+    if (collis && !s->fallPiece.landed) {
         s->frameLand = s->frame;
-    else if (!collis && s->fallPiece.landed) {
-        s->frameUnland = s->frame;
         s->g = 0;
     }
     s->fallPiece.landed = collis;

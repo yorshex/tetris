@@ -59,8 +59,6 @@ int main(void)
     if (assets_exist)
         TetrisLoadAssets();
 
-    SetTraceLogLevel(LOG_INFO);
-
     SetTargetFPS(60);
     SetExitKey(KEY_Q);
 
@@ -90,7 +88,6 @@ int main(void)
         if (WindowShouldClose()) break;
 
         TetrisFrame(&game);
-        /* TetrisPrintVerboseInfo(&game); */
 
         if (game.isGameOver) break;
     }

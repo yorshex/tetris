@@ -33,40 +33,6 @@ const Color tetris_colors[TETRIS_COLOR_LAST] = {
 
 
 
-typedef enum {
-    TETRIS_PARTICLE_CELL_SHARD,
-} TetrisParticleBehavior;
-
-typedef int32_t TetrisParticleParams[8];
-
-typedef struct {
-    TetrisParticleBehavior bh;
-    TetrisParticleParams param;
-} TetrisParticleData;
-
-typedef struct {
-    ssize_t op;
-    ssize_t on;
-    TetrisParticleData p;
-} TetrisParticle;
-
-#define TETRIS_MAX_PARTICLES 1024
-
-ssize_t tetris_particles_op_first;
-TetrisParticle tetris_particles[TETRIS_MAX_PARTICLES];
-
-void TetrisAddParticle(TetrisParticleData p)
-{
-    if (tetris_particles_op_first > 0) {
-        tetris_particles[0].data = p;
-    }
-}
-
-void TetrisCreateParticle(TetrisParticleBehavior bh, ...)
-{
-}
-
-
 void TetrisDrawPieceShape(TetrisPieceType type, int rotation, int posX, int posY, int width, int height, Color color)
 {
     float cellX = (float)width / TETRIS_PIECE_WIDTH;
