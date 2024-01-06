@@ -11,6 +11,8 @@ typedef enum {
 
 Sound tetris_sounds[TETRIS_SOUND_LAST];
 
+
+
 #define TETRIS_LOAD_SOUND(sound_type, file) \
     tetris_sounds[sound_type] = LoadSound("sfx/"file)
 
@@ -23,6 +25,8 @@ void TetrisLoadAssets(void) {
     TETRIS_LOAD_SOUND(TETRIS_SOUND_JINGLE_S, "jingles/s.wav");
     TETRIS_LOAD_SOUND(TETRIS_SOUND_JINGLE_Z, "jingles/z.wav");
 }
+
+
 
 #define TETRIS_UNLOAD_SOUND(sound_type) \
     UnloadSound(tetris_sounds[sound_type])

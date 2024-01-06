@@ -100,10 +100,13 @@ typedef struct {
     int32_t frameRepeat; // last frame an auto-repeat was mae
     int32_t countSafeMove; // the amount
     int32_t countSafeRotation; // the amount
+
     int32_t g;
+
     TetrisKeyState keyRight;
     TetrisKeyState keyLeft;
     TetrisKeyState keySoftDrop;
+    int presses[TETRIS_KEY_LAST];
 
     int32_t delaySpawn; // spawn delay - jp. ARE
     int32_t delaySpawnClear; // ARE after filling a line
@@ -112,8 +115,8 @@ typedef struct {
     int32_t delayRepeatFirst; // delayed auto shift - DAS
     int32_t gravity; // gravity
     int32_t factorSoftDrop; // soft drop factor - SDF
-    int32_t thresholdSafeMove; // the amount of moves the player can make without falling before being moved down or locked forcefully
-    int32_t thresholdSafeRotation; // the amount of rotations the player can make without falling before being moved down or locked forcefully
+    int32_t thresholdSafeMove; // the amount of moves the player can make w/o falling before being locked forcefully
+    int32_t thresholdSafeRotation; // the amount of rotations the player can make w/o falling before  locked forcefully
     TetrisKeybindings keys;
 
     int32_t level;
