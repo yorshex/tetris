@@ -1,5 +1,5 @@
 TetrisGameState game = {
-    .delayRepeatFirst = 6,
+    .delayRepeatFirst = 8,
     .delayRepeat = 1,
     .factorSoftDrop = -1,
     .keys = {
@@ -60,7 +60,6 @@ int main(void)
         TetrisLoadAssets();
 
     SetTargetFPS(60);
-    SetExitKey(KEY_Q);
 
     TetrisGameStateInit(&game);
 

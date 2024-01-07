@@ -54,6 +54,7 @@ void TetrisFallPieceInit(TetrisGameState *s, TetrisPieceType type, bool held)
     s->fallPiece.rotation = 0;
     s->fallPiece.type = type;
     s->fallPiece.held = held;
+    s->g = TETRIS_G;
 }
 
 
@@ -133,8 +134,8 @@ void TetrisGameStateInit(TetrisGameState *s)
     s->delayLock = 30;
 
     s->gravity = TETRIS_G/60;
-    s->delaySpawn = 0;
-    s->delaySpawnClear = 20;
+    s->delaySpawn = 20;
+    s->delaySpawnClear = 15;
     s->thresholdSafeMove = 15;
     s->thresholdSafeRotation = 7;
 }
@@ -219,7 +220,7 @@ bool TetrisRotateFallPieceSRS(TetrisGameState *s, TetrisRotationDirection r)
 
 
 
-bool TetrisCheckToppedOut(const TetrisGameState *s)
+bool TetrisCheckBlockOut(const TetrisGameState *s)
 {
     for (int y = 0; y < 2; y++)
         for (int x = 0; x < 4; x++)
@@ -398,26 +399,48 @@ void TetrisDoLanded(TetrisGameState *s)
 
 void TetrisDoAdvance(TetrisGameState *s)
 {
-    s->level += (1 + (s->countLinesFull > 2 ? (s->countLinesFull-1)*2 : s->countLinesFull));
+    int sectionLevel = s->level % 100;
 
-    if (s->level < 500)
-        s->gravity = TETRIS_G/60 + TETRIS_G * ((double)(s->level*s->level)/(40000));
-    else
-        s->gravity = -1;
+    sectionLevel += (1 + (s->countLinesFull > 2 ? (s->countLinesFull-1)*2 : s->countLinesFull));
 
-    if (s->level < 200)
-        s->delayLock = 30;
-    else if (s->level < 500)
-        s->delayLock = 20;
-    else if (s->level < 800)
-        s->delayLock = 15;
-    else
-        s->delayLock = 10;
+    if (sectionLevel > 99 && !s->countLinesFull)
+        sectionLevel = 99;
 
-    if (s->countLinesFull > 0)
-        s->score +=
-            (s->countLinesFull < 4 ? 1 + (s->countLinesFull-1) * 2 : 8) *
-            100 * ((double)max(s->level - s->frame / 60, 0) / 50 + 1);
+    s->level = s->level / 100 * 100 + sectionLevel;
+
+    int section = s->level / 100;
+
+            /* section */
+    if      /* 0 to 4 */ (section <= 4) s->gravity = TETRIS_G/60 + TETRIS_G * ((double)(s->level*s->level)/40000.0);
+    else    /* 5 to _ */                s->gravity = -1;
+
+    if      /* 0 to 2 */ (section <= 2) s->delayLock = 30;
+    else if /* 3 to 4 */ (section <= 4) s->delayLock = 25;
+    else if /* 5 to 6 */ (section <= 6) s->delayLock = 20;
+    else if /* 7 to 8 */ (section <= 8) s->delayLock = 15;
+    else    /* 9 to _ */                s->delayLock = 10;
+
+    if      /* 0 to 0 */ (section <= 0) s->delaySpawn = 20;
+    else if /* 1 to 4 */ (section <= 4) s->delaySpawn = 15;
+    else if /* 5 to 8 */ (section <= 8) s->delaySpawn = 10;
+    else    /* 9 to _ */                s->delaySpawn = 6;
+
+    if      /* 0 to 2 */ (section <= 2) s->delaySpawnClear = 15;
+    else if /* 3 to 6 */ (section <= 6) s->delaySpawnClear = 10;
+    else    /* 7 to _ */                s->delaySpawnClear = 6;
+
+
+    if (s->countLinesFull > 0) {
+        int lineClearMultiplier = 0;
+        switch (s->countLinesFull) {
+            case 4: lineClearMultiplier += 3;
+            case 3: lineClearMultiplier += 2;
+            case 2: lineClearMultiplier += 2;
+            case 1: lineClearMultiplier += 1;
+        }
+        double levelTimeMultiplier = (double)max(s->level - s->frame / 60, 0) / 50 + 1;
+        s->score += 100 * lineClearMultiplier * levelTimeMultiplier;
+    }
 }
 
 
@@ -455,5 +478,5 @@ void TetrisFrame(TetrisGameState *s)
 
     s->fallPiece.maxY = max(s->fallPiece.maxY, s->fallPiece.posY);
 
-    s->isGameOver = TetrisCheckToppedOut(s);
+    s->isGameOver = TetrisCheckBlockOut(s);
 }

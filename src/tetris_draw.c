@@ -8,7 +8,9 @@ typedef enum {
     TETRIS_COLOR_CELL_S = TETRIS_PIECE_S,
     TETRIS_COLOR_CELL_Z = TETRIS_PIECE_Z,
     TETRIS_COLOR_CELL_LAST = TETRIS_PIECE_LAST,
-    TETRIS_COLOR_JAR_BG = TETRIS_COLOR_CELL_LAST,
+    TETRIS_COLOR_BACKGROUND = TETRIS_COLOR_CELL_LAST,
+    TETRIS_COLOR_SHADOW,
+    TETRIS_COLOR_JAR_BG,
     TETRIS_COLOR_HOLD_UNAVAILABLE,
     TETRIS_COLOR_TEXT_PRIMARY,
     TETRIS_COLOR_TEXT_SECONDARY,
@@ -25,10 +27,12 @@ const Color tetris_colors[TETRIS_COLOR_LAST] = {
     [TETRIS_COLOR_CELL_J] = BLUE,
     [TETRIS_COLOR_CELL_S] = GREEN,
     [TETRIS_COLOR_CELL_Z] = RED,
-    [TETRIS_COLOR_JAR_BG] = LIGHTGRAY,
+    [TETRIS_COLOR_BACKGROUND] = (Color){0x2B, 0x2B, 0x2B, 0xFF},
+    [TETRIS_COLOR_SHADOW] = DARKGRAY,
+    [TETRIS_COLOR_JAR_BG] = (Color){0x16, 0x16, 0x16, 0xFF},
     [TETRIS_COLOR_HOLD_UNAVAILABLE] = GRAY,
     [TETRIS_COLOR_TEXT_PRIMARY] = GRAY,
-    [TETRIS_COLOR_TEXT_SECONDARY] = DARKGRAY,
+    [TETRIS_COLOR_TEXT_SECONDARY] = WHITE,
 };
 
 
@@ -124,7 +128,17 @@ void TetrisDrawGameJar(const TetrisGameState *s, int posX, int posY, int width, 
     }
 
     #define piece (s->fallPiece)
-    if (piece.locked) return;
+    Color pieceColor;
+    if (piece.locked) {
+        if (s->frame - s->frameLock <= 3) {
+            pieceColor = WHITE;
+            goto TetrisDrawPieceLocked;
+        }
+        else
+            return;
+    }
+
+    pieceColor = tetris_colors[TETRIS_COLOR_CELL_FIRST + piece.type];
 
     int lineThick = 1;
     int lineThickShadow = 2;
@@ -143,7 +157,7 @@ void TetrisDrawGameJar(const TetrisGameState *s, int posX, int posY, int width, 
             cellX * 4,
             cellY * 4,
             lineThickShadow,
-            ColorAlpha(ColorBrightness(tetris_colors[TETRIS_COLOR_CELL_FIRST + piece.type], -0.75), 0.3)
+            tetris_colors[TETRIS_COLOR_SHADOW]
         );
 
     if (s->frame - max(s->frameMovement, s->frameSpawn) <= 6)
@@ -165,6 +179,8 @@ void TetrisDrawGameJar(const TetrisGameState *s, int posX, int posY, int width, 
             }
         }
 
+    TetrisDrawPieceLocked:
+
     TetrisDrawPieceShape(
         piece.type,
         piece.rotation,
@@ -172,14 +188,14 @@ void TetrisDrawGameJar(const TetrisGameState *s, int posX, int posY, int width, 
         posY + cellY * (piece.posY),
         cellX * 4,
         cellY * 4,
-        tetris_colors[TETRIS_COLOR_CELL_FIRST + piece.type]
+        pieceColor
     );
     #undef piece
 }
 
 void TetrisDrawGame(TetrisGameState *s)
 {
-    ClearBackground(WHITE);
+    ClearBackground(tetris_colors[TETRIS_COLOR_BACKGROUND]);
 
     // UI
 
