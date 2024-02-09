@@ -263,71 +263,70 @@ void TetrisHardDropFallPiece(TetrisGameState *s) {
 
 void TetrisHandleInput(TetrisGameState *s)
 {
-    bool pressedRight = false;
-    bool pressedLeft = false;
+    int pressed[TETRIS_KEY_LAST] = {0};
+    int released[TETRIS_KEY_LAST] = {0};
+
+    for (int i = 0; i < TETRIS_KEY_LAST; i++) {
+        for (int j = 0; j < 2; j++) {
+            pressed[i] += IsKeyPressed( s->keys[i][j] );
+            released[i] += IsKeyReleased( s->keys[i][j] );
+        }
+    }
 
     // register keypresses
-    if (IsKeyPressed(s->keys[TETRIS_KEY_MOVE_RIGHT])) {
+    if (pressed[TETRIS_KEY_MOVE_RIGHT])
         TetrisSetKey(s, &s->keyRight, true);
-        pressedRight = true;
-    }
 
-    if (IsKeyReleased(s->keys[TETRIS_KEY_MOVE_RIGHT]))
+    if (released[TETRIS_KEY_MOVE_RIGHT])
         TetrisSetKey(s, &s->keyRight, false);
 
-    if (IsKeyPressed(s->keys[TETRIS_KEY_MOVE_LEFT])) {
+    if (pressed[TETRIS_KEY_MOVE_LEFT])
         TetrisSetKey(s, &s->keyLeft, true);
-        pressedLeft = true;
-    }
 
-    if (IsKeyReleased(s->keys[TETRIS_KEY_MOVE_LEFT]))
+    if (released[TETRIS_KEY_MOVE_LEFT])
         TetrisSetKey(s, &s->keyLeft, false);
 
-    if (IsKeyPressed(s->keys[TETRIS_KEY_SOFT_DROP]))
+    if (pressed[TETRIS_KEY_SOFT_DROP])
         TetrisSetKey(s, &s->keySoftDrop, true);
 
-    if (IsKeyReleased(s->keys[TETRIS_KEY_SOFT_DROP]))
+    if (released[TETRIS_KEY_SOFT_DROP])
         TetrisSetKey(s, &s->keySoftDrop, false);
 
     // we don't wanna do anything to the piece if it's locked
     if (s->fallPiece.locked) return;
 
     // make actions approptiate to the keypresses
-    if (pressedRight) {
-        if (TetrisDisplaceFallPiece(s, 1, 0, 0)) {
-            s->frameMovement = s->frame;
-            s->countSafeMove += 1;
-        }
+    for (int i = 0; i < pressed[TETRIS_KEY_MOVE_RIGHT]; i++) {
+        if (!TetrisDisplaceFallPiece(s, 1, 0, 0)) break;
+        s->frameMovement = s->frame;
+        s->countSafeMove += 1;
     }
 
-    if (pressedLeft) {
-        if (TetrisDisplaceFallPiece(s, -1, 0, 0)) {
-            s->frameMovement = s->frame;
-            s->countSafeMove += 1;
-        }
+    for (int i = 0; i < pressed[TETRIS_KEY_MOVE_LEFT]; i++) {
+        if (!TetrisDisplaceFallPiece(s, -1, 0, 0)) break;
+        s->frameMovement = s->frame;
+        s->countSafeMove += 1;
     }
 
-    if (IsKeyPressed(s->keys[TETRIS_KEY_ROTATE_CW])) {
-        if (TetrisRotateFallPieceSRS(s, TETRIS_CW)) {
-            s->frameMovement = s->frame;
-            s->countSafeRotation += 1;
-        }
+    for (int i = 0; i < pressed[TETRIS_KEY_ROTATE_CW]; i++) {
+        if (!TetrisRotateFallPieceSRS(s, TETRIS_CW)) break;
+        s->frameMovement = s->frame;
+        s->countSafeRotation += 1;
     }
 
-    if (IsKeyPressed(s->keys[TETRIS_KEY_ROTATE_CCW])) {
-        if (TetrisRotateFallPieceSRS(s, TETRIS_CCW)) {
-            s->frameMovement = s->frame;
-            s->countSafeRotation += 1;
-        }
+    for (int i = 0; i < pressed[TETRIS_KEY_ROTATE_CCW]; i++) {
+        if (!TetrisRotateFallPieceSRS(s, TETRIS_CCW)) break;
+        s->frameMovement = s->frame;
+        s->countSafeRotation += 1;
     }
 
-    if (IsKeyPressed(s->keys[TETRIS_KEY_HOLD]) && !s->fallPiece.held) {
+    if (pressed[TETRIS_KEY_HOLD] && !s->fallPiece.held) {
         s->frameSpawn = s->frame;
         TetrisHoldFallPiece(s);
         TetrisCheckLanded(s);
     }
 
-    if (IsKeyPressed(s->keys[TETRIS_KEY_HARD_DROP]) && !s->fallPiece.locked) {
+    if (pressed[TETRIS_KEY_HARD_DROP] && !s->fallPiece.locked) {
         TetrisHardDropFallPiece(s);
     }
 
@@ -410,20 +409,25 @@ void TetrisDoAdvance(TetrisGameState *s)
 
     int section = s->level / 100;
 
+    if (s->level >= 1000) {
+        s->level = 1000;
+        s->isGameOver = true;
+        return;
+    }
+
             /* section */
-    if      /* 0 to 4 */ (section <= 4) s->gravity = TETRIS_G/60 + TETRIS_G * ((double)(s->level*s->level)/40000.0);
-    else    /* 5 to _ */                s->gravity = -1;
+    if      /* 0 to 2 */ (section <= 2) s->gravity = TETRIS_G * ((double)(s->level*s->level)/10000. + 1./60.);
+    else    /* 3 to _ */                s->gravity = -1;
 
     if      /* 0 to 2 */ (section <= 2) s->delayLock = 30;
-    else if /* 3 to 4 */ (section <= 4) s->delayLock = 25;
-    else if /* 5 to 6 */ (section <= 6) s->delayLock = 20;
-    else if /* 7 to 8 */ (section <= 8) s->delayLock = 15;
-    else    /* 9 to _ */                s->delayLock = 10;
+    else if /* 3 to 4 */ (section <= 4) s->delayLock = 26;
+    else if /* 5 to 6 */ (section <= 6) s->delayLock = 21;
+    else if /* 7 to 8 */ (section <= 8) s->delayLock = 17;
+    else    /* 9 to _ */                s->delayLock = 12;
 
-    if      /* 0 to 0 */ (section <= 0) s->delaySpawn = 20;
-    else if /* 1 to 4 */ (section <= 4) s->delaySpawn = 15;
-    else if /* 5 to 8 */ (section <= 8) s->delaySpawn = 10;
-    else    /* 9 to _ */                s->delaySpawn = 6;
+    if      /* 0 to 0 */ (section <= 0) s->delaySpawn = 18;
+    else if /* 1 to 4 */ (section <= 4) s->delaySpawn = 12;
+    else if /* 5 to 8 */ (section <= 8) s->delaySpawn = 6;
 
     if      /* 0 to 2 */ (section <= 2) s->delaySpawnClear = 15;
     else if /* 3 to 6 */ (section <= 6) s->delaySpawnClear = 10;
@@ -438,7 +442,7 @@ void TetrisDoAdvance(TetrisGameState *s)
             case 2: lineClearMultiplier += 2;
             case 1: lineClearMultiplier += 1;
         }
-        double levelTimeMultiplier = (double)max(s->level - s->frame / 60, 0) / 50 + 1;
+        double levelTimeMultiplier = (double)s->level / 100. + 1.;
         s->score += 100 * lineClearMultiplier * levelTimeMultiplier;
     }
 }
@@ -450,7 +454,10 @@ void TetrisFrame(TetrisGameState *s)
     s->frame++;
 
     if (s->fallPiece.locked) {
-        bool succeededSpawnDelay = s->frame - s->frameLock >= (s->delaySpawn + (s->countLinesFull > 0 ? s->delaySpawnClear : 0));
+        int presentSpawnDelay = s->delaySpawn;
+        if (s->countLinesFull > 0)
+            presentSpawnDelay += s->delaySpawnClear;
+        bool succeededSpawnDelay = s->frame - s->frameLock >= presentSpawnDelay;
 
         if (succeededSpawnDelay)
         {
@@ -463,10 +470,10 @@ void TetrisFrame(TetrisGameState *s)
         }
     }
 
-    TetrisHandleInput(s);
-
     if (!s->fallPiece.landed && !s->fallPiece.locked)
         TetrisDoMidAir(s);
+
+    TetrisHandleInput(s);
 
     if (!(s->fallPiece.posY <= s->fallPiece.maxY)) {
         s->countSafeRotation = 0;
@@ -478,5 +485,5 @@ void TetrisFrame(TetrisGameState *s)
 
     s->fallPiece.maxY = max(s->fallPiece.maxY, s->fallPiece.posY);
 
-    s->isGameOver = TetrisCheckBlockOut(s);
+    s->isGameOver = s->isGameOver || TetrisCheckBlockOut(s);
 }

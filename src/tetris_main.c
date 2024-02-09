@@ -3,14 +3,14 @@ TetrisGameState game = {
     .delayRepeat = 1,
     .factorSoftDrop = -1,
     .keys = {
-        [TETRIS_KEY_MOVE_RIGHT] = KEY_RIGHT,
-        [TETRIS_KEY_MOVE_LEFT] = KEY_LEFT,
-        [TETRIS_KEY_ROTATE_CW] = KEY_UP,
-        [TETRIS_KEY_ROTATE_CCW] = KEY_Z,
-        [TETRIS_KEY_SOFT_DROP] = KEY_DOWN,
-        [TETRIS_KEY_HARD_DROP] = KEY_SPACE,
-        [TETRIS_KEY_HOLD] = KEY_C,
-    }
+        [TETRIS_KEY_MOVE_RIGHT] = { KEY_RIGHT, KEY_NULL },
+        [TETRIS_KEY_MOVE_LEFT]  = { KEY_LEFT,  KEY_NULL },
+        [TETRIS_KEY_ROTATE_CW]  = { KEY_UP,    KEY_X },
+        [TETRIS_KEY_ROTATE_CCW] = { KEY_LEFT_CONTROL, KEY_Z },
+        [TETRIS_KEY_SOFT_DROP]  = { KEY_DOWN,  KEY_NULL },
+        [TETRIS_KEY_HARD_DROP]  = { KEY_SPACE, KEY_NULL },
+        [TETRIS_KEY_HOLD]       = { KEY_C,     KEY_LEFT_SHIFT },
+    },
 };
 
 bool assets_exist = false;

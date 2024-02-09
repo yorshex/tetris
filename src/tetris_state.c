@@ -18,7 +18,7 @@ typedef enum {
     TETRIS_KEY_LAST,
 } TetrisKey;
 
-typedef int TetrisKeybindings[TETRIS_KEY_LAST];
+typedef int TetrisKeybindings[TETRIS_KEY_LAST][2];
 
 typedef struct {
     bool down;
@@ -87,7 +87,7 @@ typedef struct {
     bool held;
 } TetrisFallingPiece;
 
-#define TETRIS_G 240
+#define TETRIS_G (1 << 15)
 
 typedef struct {
     int32_t frame; // current frame
@@ -111,7 +111,7 @@ typedef struct {
     int32_t delayLock; // lock delay
     int32_t delayRepeat; // auto repeat rate - ARR
     int32_t delayRepeatFirst; // delayed auto shift - DAS
-    int32_t gravity; // gravity
+    int32_t gravity; // gravity, 1/TETRIS_G block/s
     int32_t factorSoftDrop; // soft drop factor - SDF
     int32_t thresholdSafeMove; // the amount of moves the player can make w/o falling before being locked forcefully
     int32_t thresholdSafeRotation; // the amount of rotations the player can make w/o falling before  locked forcefully

@@ -11,6 +11,8 @@ typedef enum {
     TETRIS_COLOR_BACKGROUND = TETRIS_COLOR_CELL_LAST,
     TETRIS_COLOR_SHADOW,
     TETRIS_COLOR_JAR_BG,
+    TETRIS_COLOR_JAR_GRID,
+    TETRIS_COLOR_JAR_BORDER,
     TETRIS_COLOR_HOLD_UNAVAILABLE,
     TETRIS_COLOR_TEXT_PRIMARY,
     TETRIS_COLOR_TEXT_SECONDARY,
@@ -20,24 +22,26 @@ typedef enum {
 
 
 const Color tetris_colors[TETRIS_COLOR_LAST] = {
-    [TETRIS_COLOR_CELL_O] = YELLOW,
-    [TETRIS_COLOR_CELL_I] = SKYBLUE,
-    [TETRIS_COLOR_CELL_T] = PURPLE,
-    [TETRIS_COLOR_CELL_L] = ORANGE,
-    [TETRIS_COLOR_CELL_J] = BLUE,
-    [TETRIS_COLOR_CELL_S] = GREEN,
-    [TETRIS_COLOR_CELL_Z] = RED,
-    [TETRIS_COLOR_BACKGROUND] = (Color){0x2B, 0x2B, 0x2B, 0xFF},
-    [TETRIS_COLOR_SHADOW] = DARKGRAY,
-    [TETRIS_COLOR_JAR_BG] = (Color){0x16, 0x16, 0x16, 0xFF},
+    [TETRIS_COLOR_CELL_O]           = YELLOW,
+    [TETRIS_COLOR_CELL_I]           = SKYBLUE,
+    [TETRIS_COLOR_CELL_T]           = PURPLE,
+    [TETRIS_COLOR_CELL_L]           = ORANGE,
+    [TETRIS_COLOR_CELL_J]           = BLUE,
+    [TETRIS_COLOR_CELL_S]           = GREEN,
+    [TETRIS_COLOR_CELL_Z]           = RED,
+    [TETRIS_COLOR_BACKGROUND]       = (Color){0x27, 0x27, 0x27, 0xFF},
+    [TETRIS_COLOR_SHADOW]           = DARKGRAY,
+    [TETRIS_COLOR_JAR_BG]           = BLACK,
+    [TETRIS_COLOR_JAR_GRID]         = (Color){0x14, 0x14, 0x14, 0xFF},
+    [TETRIS_COLOR_JAR_BORDER]       = WHITE,
     [TETRIS_COLOR_HOLD_UNAVAILABLE] = GRAY,
-    [TETRIS_COLOR_TEXT_PRIMARY] = GRAY,
-    [TETRIS_COLOR_TEXT_SECONDARY] = WHITE,
+    [TETRIS_COLOR_TEXT_PRIMARY]     = (Color){0xFF, 0xFF, 0xFF, 0x7F},
+    [TETRIS_COLOR_TEXT_SECONDARY]   = WHITE,
 };
 
 
 
-void TetrisDrawPieceShape(TetrisPieceType type, int rotation, int posX, int posY, int width, int height, Color color)
+void TetrisDrawPieceShape(TetrisPieceType type, int rotation, int posX, int posY, int width, int height,  Color color)
 {
     float cellX = (float)width / TETRIS_PIECE_WIDTH;
     float cellY = (float)height / TETRIS_PIECE_HEIGHT;
@@ -67,8 +71,7 @@ void TetrisDrawPieceShapeLines(TetrisPieceType type, int rotation, int posX, int
     float cellY = (float)height / TETRIS_PIECE_HEIGHT;
 
     for (int y = 0; y < TETRIS_PIECE_HEIGHT; y++) {
-        for (int x = 0; x < TETRIS_PIECE_HEIGHT; x++)
-        {
+        for (int x = 0; x < TETRIS_PIECE_HEIGHT; x++) {
             if (TETRIS_PIECE_SHAPE_AT(tetris_piece_shapes_datas[type][repeat(rotation, TETRIS_PIECE_POSSIBLE_ROTATIONS)], x, y) == 0)
                 continue;
 
@@ -110,6 +113,43 @@ void TetrisDrawGameJar(const TetrisGameState *s, int posX, int posY, int width, 
         tetris_colors[TETRIS_COLOR_JAR_BG]
     );
 
+    for (int y = 0; y < TETRIS_JAR_HEIGHT; y++)
+        DrawLineEx(
+            (Vector2){ posX,       posY + cellY*y },
+            (Vector2){ posX+width, posY + cellY*y },
+            1,
+            tetris_colors[TETRIS_COLOR_JAR_GRID]
+        );
+
+    for (int x = 1; x < TETRIS_JAR_WIDTH; x++)
+        DrawLineEx(
+            (Vector2){ posX + cellX*x, posY },
+            (Vector2){ posX + cellX*x, posY+height },
+            1,
+            tetris_colors[TETRIS_COLOR_JAR_GRID]
+        );
+
+    DrawLineEx(
+        (Vector2){ posX-1, posY-1 },
+        (Vector2){ posX-1, posY+height+2 },
+        2,
+        tetris_colors[TETRIS_COLOR_JAR_BORDER]
+    );
+
+    DrawLineEx(
+        (Vector2){ posX+width+1, posY-1 },
+        (Vector2){ posX+width+1, posY+height+2 },
+        2,
+        tetris_colors[TETRIS_COLOR_JAR_BORDER]
+    );
+
+    DrawLineEx(
+        (Vector2){ posX, posY+height+1 },
+        (Vector2){ posX+width, posY+height+1 },
+        2,
+        tetris_colors[TETRIS_COLOR_JAR_BORDER]
+    );
+
     for (int y = -TETRIS_JAR_HEIGHT; y < TETRIS_JAR_HEIGHT; y++)
     {
         for (int x = 0; x < TETRIS_JAR_WIDTH; x++)
@@ -117,12 +157,14 @@ void TetrisDrawGameJar(const TetrisGameState *s, int posX, int posY, int width, 
             if (TETRIS_JAR_AT(*s, x, y).type <= -1 || (s->maskLinesFull[y+TETRIS_JAR_HEIGHT] && s->fallPiece.locked))
                 continue;
 
+            Color color = ColorBrightness(tetris_colors[TETRIS_COLOR_CELL_FIRST + TETRIS_JAR_AT(*s, x, y).type], -0.25);
+
             DrawRectangle(
                 posX + cellX * x,
                 posY + cellY * y,
                 ceilf(cellX),
                 ceilf(cellY),
-                ColorBrightness(tetris_colors[TETRIS_COLOR_CELL_FIRST + TETRIS_JAR_AT(*s, x, y).type], -0.25)
+                color
             );
         }
     }
@@ -209,7 +251,7 @@ void TetrisDrawGame(TetrisGameState *s)
     DrawText("Score", 116, 168, 10, tetris_colors[TETRIS_COLOR_TEXT_PRIMARY]);
     DrawText(TextFormat("%i", s->score), 116, 178, 10, tetris_colors[TETRIS_COLOR_TEXT_SECONDARY]);
 
-    DrawText("Next", 232, 28, 10, tetris_colors[TETRIS_COLOR_TEXT_PRIMARY]);
+    DrawText("Next", 236, 28, 10, tetris_colors[TETRIS_COLOR_TEXT_PRIMARY]);
     for (int i = 0; i < 5; i++)
         TetrisDrawPieceShape(
             s->bag.values[repeat(s->bag.index+i, TETRIS_BAG_SIZE)], 0,
